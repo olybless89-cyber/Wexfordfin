@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Wexfordfin Grand Banking Hall">
+  <defs>
+    <linearGradient id="hall-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1b2e"/>
+      <stop offset="0.55" stop-color="#14315c"/>
+      <stop offset="1" stop-color="#1a4cf0"/>
+    </linearGradient>
+    <linearGradient id="hall-marble" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4efdf"/>
+      <stop offset="0.5" stop-color="#d9cfae"/>
+      <stop offset="1" stop-color="#b39b6e"/>
+    </linearGradient>
+    <radialGradient id="hall-light" cx="0.5" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#cfe0ff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#0d1b2e" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="hall-floor" width="90" height="90" patternUnits="userSpaceOnUse">
+      <rect width="90" height="90" fill="#101826"/>
+      <path d="M0 90L90 0H45L-45 90Z" fill="#182338"/>
+      <path d="M45 0L45 90M0 45H90" stroke="#1e2d4d" stroke-opacity="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- sky through atrium -->
+  <rect width="1600" height="900" fill="url(#hall-bg)"/>
+  <rect width="1600" height="900" fill="url(#hall-light)"/>
+
+  <!-- columns -->
+  <g>
+    <g fill="url(#hall-marble)">
+      <rect x="120" y="180" width="90" height="600" rx="6"/>
+      <rect x="380" y="180" width="90" height="600" rx="6"/>
+      <rect x="1130" y="180" width="90" height="600" rx="6"/>
+      <rect x="1390" y="180" width="90" height="600" rx="6"/>
+    </g>
+    <g fill="#8a744c" opacity="0.9">
+      <rect x="110" y="180" width="110" height="34" rx="8"/>
+      <rect x="370" y="180" width="110" height="34" rx="8"/>
+      <rect x="1120" y="180" width="110" height="34" rx="8"/>
+      <rect x="1380" y="180" width="110" height="34" rx="8"/>
+      <rect x="110" y="746" width="110" height="34" rx="8"/>
+      <rect x="370" y="746" width="110" height="34" rx="8"/>
+      <rect x="1120" y="746" width="110" height="34" rx="8"/>
+      <rect x="1380" y="746" width="110" height="34" rx="8"/>
+    </g>
+  </g>
+
+  <!-- mezzanine with brand -->
+  <rect x="0" y="560" width="1600" height="90" fill="#0b1424"/>
+  <rect x="0" y="553" width="1600" height="7" fill="url(#hall-marble)"/>
+  <text x="800" y="618" text-anchor="middle" font-family="Georgia, serif" font-size="62" letter-spacing="10" fill="#d5b25f">WEXFORDFIN</text>
+
+  <!-- floor with reflection -->
+  <rect y="650" width="1600" height="250" fill="url(#hall-floor)"/>
+  <ellipse cx="800" cy="660" rx="700" ry="42" fill="#2b3f6e" opacity="0.5"/>
+
+  <!-- teller counters -->
+  <g fill="#101726">
+    <rect x="240" y="620" width="420" height="90" rx="10"/>
+    <rect x="940" y="620" width="420" height="90" rx="10"/>
+  </g>
+  <g fill="url(#hall-marble)">
+    <rect x="240" y="620" width="420" height="18" rx="9"/>
+    <rect x="940" y="620" width="420" height="18" rx="9"/>
+  </g>
+
+  <!-- chandeliers -->
+  <g stroke="#d5b25f" stroke-width="4" fill="#f9e6a0">
+    <circle cx="800" cy="240" r="26" opacity="0.95"/>
+    <circle cx="530" cy="200" r="16" opacity="0.85"/>
+    <circle cx="1070" cy="200" r="16" opacity="0.85"/>
+  </g>
+
+  <!-- brand plaque center -->
+  <rect x="640" y="330" width="320" height="120" rx="16" fill="#101726" stroke="url(#hall-marble)" stroke-width="3"/>
+  <g font-family="Georgia, serif">
+    <text x="800" y="380" text-anchor="middle" font-size="40" fill="#f3d98a" letter-spacing="6">WEXFORDFIN</text>
+    <text x="800" y="420" text-anchor="middle" font-size="19" fill="#9fb9e8" letter-spacing="3">GRAND BANKING HALL</text>
+  </g>
+  <circle cx="800" cy="345" r="20" fill="#2563eb" stroke="#f3d98a" stroke-width="2"/>
+  <path d="M793 345l10 0m-5 -7l5 7 -5 -7" stroke="#ffffff" stroke-width="2" fill="none"/>
+
+  <!-- floor brand inlay -->
+  <text x="800" y="800" text-anchor="middle" font-family="Georgia, serif" font-size="52" letter-spacing="14" fill="#39528e" opacity="0.6">WEXFORDFIN</text>
+</svg>

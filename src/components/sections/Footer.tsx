@@ -57,7 +57,7 @@ export function Footer() {
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <span className="font-heading text-xl font-bold tracking-tight text-white">
-                Nova<span className="text-[#60a5fa]">Crest</span>
+                Wexford<span className="text-[#60a5fa]">fin</span>
               </span>
             </a>
             <p className="mt-4 max-w-xs text-sm leading-relaxed" style={{ color: '#94a3b8' }}>

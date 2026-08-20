@@ -64,7 +64,7 @@ export default function LoginPage() {
               <Shield className="h-7 w-7" style={{ color: '#c9a84c' }} />
             </div>
             <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Nova<span style={{ color: '#c9a84c' }}>Crest</span>
+              Wexford<span style={{ color: '#c9a84c' }}>fin</span>
             </span>
           </div>
 
@@ -116,7 +116,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-2 md:hidden">
             <Shield className="h-5 w-5" style={{ color: '#c9a84c' }} />
             <span className="font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Nova<span style={{ color: '#c9a84c' }}>Crest</span>
+              Wexford<span style={{ color: '#c9a84c' }}>fin</span>
             </span>
           </div>
           <div className="hidden md:block" />

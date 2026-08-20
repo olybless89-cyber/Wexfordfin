@@ -61,7 +61,7 @@ export function Header({ isLanding = false }: HeaderProps) {
               <Shield className="h-5 w-5" />
             </div>
             <span className="font-heading text-xl font-bold tracking-tight text-white">
-              Nova<span className="text-blue-400">Crest</span>
+              Wexford<span className="text-blue-400">fin</span>
             </span>
           </a>
 

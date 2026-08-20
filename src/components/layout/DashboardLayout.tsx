@@ -45,7 +45,7 @@ export default function DashboardLayout({ children, notifCount = 0 }: Props) {
             <Shield className="h-5 w-5" style={{ color: GOLD }} />
           </div>
           <span className="text-lg font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Nova<span style={{ color: GOLD }}>Crest</span>
+            Wexford<span style={{ color: GOLD }}>fin</span>
           </span>
         </Link>
 
@@ -116,7 +116,7 @@ export default function DashboardLayout({ children, notifCount = 0 }: Props) {
           <Link to="/" className="flex items-center gap-2">
             <Shield className="h-5 w-5" style={{ color: GOLD }} />
             <span className="font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Nova<span style={{ color: GOLD }}>Crest</span>
+              Wexford<span style={{ color: GOLD }}>fin</span>
             </span>
           </Link>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

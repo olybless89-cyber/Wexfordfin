@@ -3,10 +3,10 @@
 ## 1. Application Overview
 
 ### 1.1 Application Name
-NovaCrest
+Wexfordfin
 
 ### 1.2 Application Description
-A full-stack functional web banking platform for demonstration and educational purposes. The platform includes public marketing pages, user account management, transaction capabilities, and administrative controls. Domain: novacrestbk.online. Built with React + Vite + TypeScript + Tailwind + shadcn/ui, backend powered by Supabase.
+A full-stack functional web banking platform for demonstration and educational purposes. The platform includes public marketing pages, user account management, transaction capabilities, and administrative controls. Domain: wexfordfin.com. Built with React + Vite + TypeScript + Tailwind + shadcn/ui, backend powered by Supabase.
 
 ### 1.3 Design Theme
 - Dark navy/midnight professional banking theme
@@ -26,7 +26,7 @@ This platform is for demonstration and educational purposes only. It is not a re
 - **Administrators**: Managing user accounts, approving requests, monitoring platform activity
 
 ### 2.2 Core Usage Scenarios
-- Browse public marketing site to learn about NovaCrest features and products
+- Browse public marketing site to learn about Wexfordfin features and products
 - Register and log in to access personal banking dashboard
 - View account balances and transaction history
 - Transfer funds between own accounts or to other users
@@ -40,7 +40,7 @@ This platform is for demonstration and educational purposes only. It is not a re
 ### 3.1 Page Structure
 
 ```
-NovaCrest Platform
+Wexfordfin Platform
 ├── Public Site
 │   ├── Hero / Landing Section
 │   ├── Features Section

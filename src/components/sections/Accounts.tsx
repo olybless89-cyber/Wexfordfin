@@ -62,7 +62,7 @@ export function Accounts() {
             Choose the account that fits you
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty">
-            Whether you are managing daily spending, building savings, or running a business, NovaCrest has an account for you.
+            Whether you are managing daily spending, building savings, or running a business, Wexfordfin has an account for you.
           </p>
         </div>
 

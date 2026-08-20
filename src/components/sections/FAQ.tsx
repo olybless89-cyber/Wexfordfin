@@ -7,8 +7,8 @@ import {
 
 const faqs = [
   {
-    question: 'Is NovaCrest a real bank?',
-    answer: 'NovaCrest is a financial technology company, not a bank. Banking services are provided by our partner banks, which are FDIC insured.',
+    question: 'Is Wexfordfin a real bank?',
+    answer: 'Wexfordfin is a financial technology company, not a bank. Banking services are provided by our partner banks, which are FDIC insured.',
   },
   {
     question: 'Are there any monthly fees?',

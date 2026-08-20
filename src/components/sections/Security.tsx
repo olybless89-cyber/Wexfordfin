@@ -39,7 +39,7 @@ export function Security() {
               Your money, protected around the clock
             </h2>
             <p className="mt-4 max-w-lg text-muted-foreground text-pretty">
-              Security is not an afterthought at NovaCrest. It is built into every layer of our platform, from the app on your phone to the vaults that hold your deposits.
+              Security is not an afterthought at Wexfordfin. It is built into every layer of our platform, from the app on your phone to the vaults that hold your deposits.
             </p>
 
             <div className="mt-10 grid gap-6 sm:grid-cols-2">

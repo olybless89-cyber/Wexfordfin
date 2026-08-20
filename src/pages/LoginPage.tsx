@@ -140,7 +140,7 @@ export default function LoginPage() {
                 Welcome back
               </h2>
               <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                Sign in to your NovaCrest account
+                Sign in to your Wexfordfin account
               </p>
             </div>
 
@@ -223,7 +223,7 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>New to NovaCrest?</span>
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>New to Wexfordfin?</span>
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
             </div>
 
@@ -236,7 +236,7 @@ export default function LoginPage() {
                 borderRadius: '10px',
               }}
             >
-              Open a NovaCrest Account
+              Open a Wexfordfin Account
               <ArrowRight className="h-4 w-4" />
             </Link>
 

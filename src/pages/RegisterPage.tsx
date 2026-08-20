@@ -37,7 +37,7 @@ export default function RegisterPage() {
     const { error } = await signUp(form.email, form.password, form.fullName);
     setLoading(false);
     if (error) { toast.error('Registration failed: ' + error.message); return; }
-    toast.success('Account created! Welcome to NovaCrest.');
+    toast.success('Account created! Welcome to Wexfordfin.');
     navigate('/dashboard');
   };
 
@@ -70,7 +70,7 @@ export default function RegisterPage() {
                 Your financial<br />future starts here.
               </h1>
               <p className="mt-4 text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                Open your NovaCrest account today and access a full suite of premium banking services built for modern life.
+                Open your Wexfordfin account today and access a full suite of premium banking services built for modern life.
               </p>
             </div>
             {/* Perks */}
@@ -89,7 +89,7 @@ export default function RegisterPage() {
           {/* Bottom quote */}
           <div className="p-4 rounded-xl" style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)' }}>
             <p className="text-sm italic" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              "NovaCrest transformed how I manage my finances. The platform is intuitive, secure, and the team is exceptional."
+              "Wexfordfin transformed how I manage my finances. The platform is intuitive, secure, and the team is exceptional."
             </p>
             <p className="text-xs mt-2 font-medium" style={{ color: '#c9a84c' }}>— James Whitmore, Business Client</p>
           </div>
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                 <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#c9a84c' }}>New Account</span>
               </div>
               <h2 className="text-3xl font-bold text-white mt-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Open an Account</h2>
-              <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>Join NovaCrest in under 2 minutes</p>
+              <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>Join Wexfordfin in under 2 minutes</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -198,7 +198,7 @@ export default function RegisterPage() {
             <Link to="/login"
               className="flex items-center justify-center gap-2 w-full h-12 text-sm font-medium"
               style={{ border: '1px solid rgba(201,168,76,0.3)', color: '#c9a84c', borderRadius: '10px' }}>
-              Sign In to NovaCrest <ArrowRight className="h-4 w-4" />
+              Sign In to Wexfordfin <ArrowRight className="h-4 w-4" />
             </Link>
 
             <div className="flex items-center justify-center gap-2">

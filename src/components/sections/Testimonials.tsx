@@ -6,7 +6,7 @@ const testimonials = [
   {
     name: 'Daniel R.',
     role: 'Small business owner',
-    quote: 'NovaCrest cut our banking fees to zero and gave us instant insight into cash flow. I cannot imagine switching back.',
+    quote: 'Wexfordfin cut our banking fees to zero and gave us instant insight into cash flow. I cannot imagine switching back.',
     rating: 5,
   },
   {
@@ -36,7 +36,7 @@ export function Testimonials() {
             Trusted by thousands of customers
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty">
-            See why people are choosing NovaCrest for their everyday banking.
+            See why people are choosing Wexfordfin for their everyday banking.
           </p>
         </div>
 

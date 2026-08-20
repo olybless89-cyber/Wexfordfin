@@ -64,9 +64,9 @@ export function Footer() {
               Modern banking for modern lives. Secure, simple, and designed to help your money grow.
             </p>
             <div className="mt-6 flex flex-col gap-2 text-sm" style={{ color: '#94a3b8' }}>
-              <a href="mailto:support@novacrestbk.online" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href="mailto:support@wexfordfin.com" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail className="h-4 w-4" />
-                support@novacrestbk.online
+                support@wexfordfin.com
               </a>
               <a href="tel:+18005551234" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Phone className="h-4 w-4" />
@@ -100,7 +100,7 @@ export function Footer() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
           <p className="text-xs" style={{ color: '#64748b' }}>
-            © {new Date().getFullYear()} NovaCrest Financial Technologies. All rights reserved.
+            © {new Date().getFullYear()} Wexfordfin Financial Technologies. All rights reserved.
           </p>
 
         </div>

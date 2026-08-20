@@ -178,7 +178,7 @@ export function Header({ isLanding = false }: HeaderProps) {
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Shield className="h-5 w-5" />
           </div>
-          <span className="font-heading text-xl font-bold tracking-tight">NovaCrest</span>
+          <span className="font-heading text-xl font-bold tracking-tight">Wexfordfin</span>
         </a>
 
         <nav className="hidden items-center gap-8 md:flex">

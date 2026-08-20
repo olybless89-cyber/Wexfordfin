@@ -51,7 +51,7 @@ export function Features() {
     <section id="features" className="relative py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
         <div className="mb-16 text-center">
-          <span className="text-xs font-semibold tracking-wider text-primary uppercase">Why NovaCrest</span>
+          <span className="text-xs font-semibold tracking-wider text-primary uppercase">Why Wexfordfin</span>
           <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
             Built for how you bank today
           </h2>

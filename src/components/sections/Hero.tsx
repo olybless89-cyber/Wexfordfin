@@ -63,6 +63,12 @@ export function Hero() {
               alt={bgSlides[current].label}
               className="w-full h-full object-cover"
             />
+            {/* Brand overlay — Wexfordfin name on every background slide */}
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-start p-8 md:p-14">
+              <span className="font-heading text-4xl md:text-6xl font-extrabold tracking-[0.2em] text-white/25 select-none">
+                WEXFORDFIN
+              </span>
+            </div>
           </motion.div>
         </AnimatePresence>
 

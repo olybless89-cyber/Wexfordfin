@@ -8,8 +8,7 @@
 
 ## Deployment (important)
 - Live site: https://wexfordfin.pages.dev (Cloudflare Pages).
-- As of 2026-08-21 the Pages project is **NOT wired to this GitHub repo** — pushes to `main` do not trigger a deploy (no commit statuses/check-runs/webhooks from Cloudflare). The live site served a stale pre-rebrand build (old bundle `index-Cct7zKI8.js` pulling Novacrest-branded slider images from signed klingai.com URLs).
-- No Cloudflare credentials (API token / account ID) or deploy hooks exist in the repo or environment. To deploy: user must reconnect the Pages Git integration to this repo, or provide `CLOUDFLARE_API_TOKEN` + account ID for a Wrangler direct upload of `dist/`.
+- As of 2026-08-21 the Pages project is **NOT wired to this GitHub repo** — pushes to `main` do not trigger a deploy (no commit statuses/check-runs/webhooks from Cloudflare). Deploys are done by **direct upload**: `CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=… npx wrangler pages deploy dist --project-name=wexfordfin --branch=main` (credentials are user-provided per session; do not store them in the repo).
 - `railway.json` also exists (NIXPACKS + `npx serve -s dist`), so Railway may be an alternative host.
 
 ## Branding locations

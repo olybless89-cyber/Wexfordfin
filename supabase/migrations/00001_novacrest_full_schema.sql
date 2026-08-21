@@ -27,6 +27,7 @@ CREATE TABLE public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE NOT NULL,
   full_name text,
+  transaction_pin text,
   phone text,
   role public.user_role NOT NULL DEFAULT 'user',
   is_active boolean NOT NULL DEFAULT true,

@@ -15,3 +15,11 @@
 - Front-page slider: `src/components/sections/BankingSlider.tsx` + `public/images/hero/branded/slide-0*.jpg` (local, clean, with WEXFORDFIN watermark overlay).
 - Logo is text-based ("Wexford" white + "fin" blue) in `Header.tsx` / `Footer.tsx`; `public/images/logo/*.svg` are unused TailAdmin template assets.
 - OG image: `public/images/og-image.jpg` (generated 1200x630), meta tags in `index.html`.
+
+## Known issues (E2E audit 2026-08-21, fixed in uncommitted branch)
+- ~~`banking-ops` has NO caller-auth check~~ → **FIXED**: function now requires `auth.getUser()`; user actions (`internal_transfer`, `external_transfer`) demand `body.user_id === caller.id`; admin actions (`admin_fund`, `place_hold`, `release_hold`, `approve_deposit`, `approve_withdrawal`) demand `profiles.role === 'admin'` (same pattern as `admin-create-user`).
+- ~~External wire bypassed edge function (false ledger entries)~~ → **FIXED**: `TransferPage.executeExternalTransfer` now invokes `banking-ops`; server moves balances and returns the reference for the receipt.
+- ~~ProtectedRoute switched admins/users between `/admin` and `/dashboard`~~ → **FIXED**: no more forced role redirects; non-admins hitting `/admin` get an inline 403 page; login routes admins→`/admin` and users→`/dashboard` explicitly.
+- Responsive/CWC audit: all public + dashboard pages pass at 375px and 320px (no horizontal overflow; tables use `overflow-x-auto`).
+- **Deployment pending**: to make the `banking-ops` fix live you must redeploy the function: `npx supabase functions deploy banking-ops --project-ref donxmjgaxoobdarhqaey` (needs `SUPABASE_ACCESS_TOKEN`).
+- Test accounts: `e2e.browser@wexfordfin.dev` and `e2e.bob@wexfordfin.dev` (both `TestPass123!`).

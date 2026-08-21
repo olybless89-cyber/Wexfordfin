@@ -396,36 +396,26 @@ export default function TransferPage() {
 
   const executeExternalTransfer = async (fromAcct: Account, amount: number) => {
     setLoading(true);
-    await new Promise(res => setTimeout(res, 1500));
     try {
-      const ref = genRef();
-      const desc = [
-        `External Wire Transfer → ${recipientAcctNum.trim()}`,
-        bankName && `Bank: ${bankName}`,
-        routingNumber && `Routing: ${routingNumber}`,
-        swiftCode && `SWIFT: ${swiftCode}`,
-        transferPurpose && `Purpose: ${purposeLabel[transferPurpose] || transferPurpose}`,
-        extMemo && `Memo: ${extMemo}`,
-      ].filter(Boolean).join(' | ');
-
-      const { error: txErr } = await supabase.from('transactions').insert({
-        from_account_id: fromAcct.id,
-        user_id: user!.id,
-        transaction_type: 'transfer_out',
-        amount: Math.abs(amount),
-        description: desc,
-        status: 'completed',
-        reference_number: ref,
+      const { data, error } = await supabase.functions.invoke('banking-ops', {
+        body: {
+          action: 'external_transfer',
+          from_account_id: fromAcct.id,
+          recipient_account_number: recipientAcctNum.trim(),
+          amount,
+          user_id: user!.id,
+          bank_name: bankName || undefined,
+          routing_number: routingNumber || undefined,
+          swift_code: swiftCode || undefined,
+          bank_address: bankAddress || undefined,
+          transfer_purpose: transferPurpose ? (purposeLabel[transferPurpose] || transferPurpose) : undefined,
+          memo: extMemo || undefined,
+        }
       });
-      if (txErr) throw new Error(txErr.message);
-
-      await supabase.from('accounts').update({
-        balance: fromAcct.balance - amount,
-        available_balance: fromAcct.available_balance - amount,
-      }).eq('id', fromAcct.id);
+      if (error) throw new Error(await parseEdgeError(error));
 
       setReceipt({
-        ref,
+        ref: data?.reference || genRef(),
         date: new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'medium' }),
         fromAccount: fromAcct.account_type.charAt(0).toUpperCase() + fromAcct.account_type.slice(1) + ' Account',
         fromAccountNumber: fromAcct.account_number,

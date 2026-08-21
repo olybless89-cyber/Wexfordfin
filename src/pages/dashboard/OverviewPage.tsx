@@ -57,7 +57,7 @@ export default function DashboardOverview() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Welcome back, {profile?.full_name?.split(' ')[0] || 'there'} 👋
+              Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''} 👋
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Here's your financial summary for today</p>
           </div>

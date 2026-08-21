@@ -6,17 +6,49 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Actions any authenticated user may run for their OWN account (body.user_id must equal caller id)
+const USER_ACTIONS = ['internal_transfer', 'external_transfer'];
+// Actions restricted to admins (caller profile must have role 'admin')
+const ADMIN_ACTIONS = ['admin_fund', 'place_hold', 'release_hold', 'approve_deposit', 'approve_withdrawal'];
+
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  );
-
   try {
+    // ---- Authentication: require a valid caller ----
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return json({ error: 'Unauthorized' }, 401);
+
+    const callerClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user: caller }, error: authErr } = await callerClient.auth.getUser();
+    if (authErr || !caller) return json({ error: 'Unauthorized' }, 401);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', caller.id).single();
+    const isAdmin = callerProfile?.role === 'admin';
+
     const body = await req.json();
     const { action } = body;
+
+    // ---- Authorization gate ----
+    if (USER_ACTIONS.includes(action)) {
+      if (!body.user_id || body.user_id !== caller.id) return json({ error: 'Forbidden: not your account' }, 403);
+    } else if (ADMIN_ACTIONS.includes(action)) {
+      if (!isAdmin) return json({ error: 'Forbidden: admin only' }, 403);
+    } else {
+      return json({ error: `Unknown action: ${action}` }, 400);
+    }
 
     if (action === 'internal_transfer') {
       // Transfer between same user's accounts
@@ -98,7 +130,7 @@ Deno.serve(async (req) => {
         { from_account_id, to_account_id: toAcct.id, user_id, transaction_type: 'transfer_out', amount, status: 'completed', reference_number: ref + '-OUT', description: outDesc },
         { from_account_id, to_account_id: toAcct.id, user_id: toAcct.user_id, transaction_type: 'transfer_in', amount, status: 'completed', reference_number: ref + '-IN', description: inDesc },
       ]);
-      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ success: true, reference: ref + '-OUT' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     if (action === 'admin_fund') {

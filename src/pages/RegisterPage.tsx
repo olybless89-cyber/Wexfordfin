@@ -42,7 +42,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen min-h-svh flex flex-col md:flex-row">
       {/* ── Left Panel ── */}
       <div className="hidden md:flex md:w-1/2 relative flex-col overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${BG_IMAGE})` }} />
@@ -97,7 +97,7 @@ export default function RegisterPage() {
       </div>
 
       {/* ── Right Panel: Form ── */}
-      <div className="w-full md:w-1/2 flex flex-col min-h-screen" style={{ background: '#0a0f1e' }}>
+      <div className="w-full md:w-1/2 flex flex-col flex-1" style={{ background: '#0a0f1e' }}>
         {/* Top bar */}
         <div className="flex items-center justify-between px-8 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2 md:hidden">
@@ -111,7 +111,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Scrollable form */}
-        <div className="flex-1 flex items-center justify-center px-8 py-10 overflow-y-auto">
+        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-8 sm:py-10 overflow-y-auto">
           <div className="w-full max-w-sm space-y-6">
             {/* Header */}
             <div>

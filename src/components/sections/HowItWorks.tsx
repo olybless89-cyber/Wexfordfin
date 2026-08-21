@@ -55,40 +55,40 @@ export function HowItWorks() {
   const inView = useInView(ref, { once: true, margin: '-100px' });
 
   return (
-    <section id="how-it-works" className="relative py-24 md:py-32">
+    <section id="how-it-works" className="relative py-16 md:py-32">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
-        <div className="mb-16 text-center">
+        <div className="mb-10 md:mb-16 text-center">
           <span className="text-xs font-semibold tracking-wider text-primary uppercase">How it works</span>
-          <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
+          <h2 className="mt-3 font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
             Open an account in minutes
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty">
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty text-sm md:text-base">
             We have stripped away the paperwork and long waits so you can start banking today.
           </p>
         </div>
 
         {/* Banking building / mobile app images */}
-        <div className="mb-12 grid md:grid-cols-2 gap-6">
-          <div className="relative rounded-3xl overflow-hidden border border-border h-48">
+        <div className="mb-8 md:mb-12 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+          <div className="relative rounded-2xl md:rounded-3xl overflow-hidden border border-border h-40 md:h-48">
             <img
               src="https://miaoda-site-img.s3cdn.medo.dev/images/KLing_e2967863-4360-4c49-8808-2ff007804cd8.jpg"
               alt="Modern bank building exterior architecture"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-5">
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4 md:p-5">
               <div>
                 <p className="text-sm font-semibold text-foreground">Established Presence</p>
                 <p className="text-xs text-muted-foreground">Licensed in 50 states</p>
               </div>
             </div>
           </div>
-          <div className="relative rounded-3xl overflow-hidden border border-border h-48">
+          <div className="relative rounded-2xl md:rounded-3xl overflow-hidden border border-border h-40 md:h-48">
             <img
               src="https://miaoda-site-img.s3cdn.medo.dev/images/KLing_a3ad6145-c2e6-4e98-a9c0-762fb08d1ba9.jpg"
               alt="Mobile banking app interface on phone screen"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-5">
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4 md:p-5">
               <div>
                 <p className="text-sm font-semibold text-foreground">Banking On-the-Go</p>
                 <p className="text-xs text-muted-foreground">iOS & Android available</p>
@@ -97,7 +97,7 @@ export function HowItWorks() {
           </div>
         </div>
 
-        <div ref={ref} className="grid gap-8 md:grid-cols-3">
+        <div ref={ref} className="grid gap-8 grid-cols-1 sm:grid-cols-3">
           {steps.map((step, index) => (
             <motion.div
               key={step.number}
@@ -106,11 +106,11 @@ export function HowItWorks() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="relative text-center"
             >
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-primary ring-1 ring-border">
-                <step.icon className="h-7 w-7" />
+              <div className="mx-auto mb-6 flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-secondary text-primary ring-1 ring-border">
+                <step.icon className="h-6 w-6 md:h-7 md:w-7" />
               </div>
               <span className="font-heading text-sm font-bold text-accent">{step.number}</span>
-              <h3 className="mt-2 font-heading text-xl font-semibold text-foreground">{step.title}</h3>
+              <h3 className="mt-2 font-heading text-lg md:text-xl font-semibold text-foreground">{step.title}</h3>
               <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground text-pretty">
                 {step.description}
               </p>
@@ -118,16 +118,16 @@ export function HowItWorks() {
           ))}
         </div>
 
-        <div className="mt-20 grid gap-6 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-6 text-center">
+        <div className="mt-12 md:mt-20 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-card p-5 md:p-6 text-center">
             <StepCounter value={3} suffix=" min" />
             <p className="mt-1 text-sm text-muted-foreground">Average sign-up time</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-6 text-center">
+          <div className="rounded-2xl border border-border bg-card p-5 md:p-6 text-center">
             <StepCounter value={99} suffix="%" />
             <p className="mt-1 text-sm text-muted-foreground">Identity approval rate</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-6 text-center">
+          <div className="rounded-2xl border border-border bg-card p-5 md:p-6 text-center">
             <StepCounter value={0} suffix=" fees" />
             <p className="mt-1 text-sm text-muted-foreground">On personal accounts</p>
           </div>

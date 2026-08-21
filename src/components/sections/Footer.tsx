@@ -48,10 +48,12 @@ export function Footer() {
   };
 
   return (
-    <footer style={{ backgroundColor: '#0d1a2d', color: '#e2e8f0' }} className="py-16">
+    <footer style={{ backgroundColor: '#0d1a2d', color: '#e2e8f0' }} className="py-12 md:py-16">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-6">
-          <div className="lg:col-span-2">
+        {/* Top grid: brand col + link groups */}
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
+          {/* Brand */}
+          <div className="sm:col-span-2 lg:col-span-2">
             <a href="#" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563eb]">
                 <Shield className="h-5 w-5 text-white" />
@@ -65,44 +67,50 @@ export function Footer() {
             </p>
             <div className="mt-6 flex flex-col gap-2 text-sm" style={{ color: '#94a3b8' }}>
               <a href="mailto:support@wexfordfin.com" className="flex items-center gap-2 hover:text-white transition-colors">
-                <Mail className="h-4 w-4" />
+                <Mail className="h-4 w-4 shrink-0" />
                 support@wexfordfin.com
               </a>
               <a href="tel:+18005551234" className="flex items-center gap-2 hover:text-white transition-colors">
-                <Phone className="h-4 w-4" />
+                <Phone className="h-4 w-4 shrink-0" />
                 1-800-555-1234
               </a>
             </div>
           </div>
 
-          {footerLinks.map((group) => (
-            <div key={group.title}>
-              <h4 className="text-sm font-semibold text-white">{group.title}</h4>
-              <ul className="mt-4 space-y-3">
-                {group.links.map((link) => (
-                  <li key={link.label}>
-                    <button
-                      onClick={() => handleClick(link.href)}
-                      className="text-sm transition-colors hover:text-white"
-                      style={{ color: '#94a3b8' }}
-                    >
-                      {link.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Link groups — 2-col grid on mobile, 4 cols on lg */}
+          <div className="sm:col-span-2 lg:col-span-4 grid grid-cols-2 gap-8 sm:grid-cols-4">
+            {footerLinks.map((group) => (
+              <div key={group.title}>
+                <h4 className="text-sm font-semibold text-white">{group.title}</h4>
+                <ul className="mt-4 space-y-3">
+                  {group.links.map((link) => (
+                    <li key={link.label}>
+                      <button
+                        onClick={() => handleClick(link.href)}
+                        className="text-sm transition-colors hover:text-white text-left"
+                        style={{ color: '#94a3b8' }}
+                      >
+                        {link.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
+        {/* Bottom bar */}
         <div
-          className="mt-16 flex flex-col items-center justify-between gap-4 pt-8 md:flex-row"
+          className="mt-12 md:mt-16 flex flex-col items-center justify-between gap-3 pt-6 md:pt-8 md:flex-row"
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
-          <p className="text-xs" style={{ color: '#64748b' }}>
+          <p className="text-xs text-center md:text-left" style={{ color: '#64748b' }}>
             © {new Date().getFullYear()} Wexfordfin Financial Technologies. All rights reserved.
           </p>
-
+          <p className="text-xs" style={{ color: '#64748b' }}>
+            Powered by Wexfordfin · wexfordfin.com
+          </p>
         </div>
       </div>
     </footer>

@@ -43,7 +43,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen min-h-svh flex flex-col md:flex-row">
       {/* ── Left Panel: Hero Image + Brand ── */}
       <div className="hidden md:flex md:w-1/2 relative flex-col justify-between overflow-hidden">
         {/* Background image */}
@@ -109,7 +109,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right Panel: Login Form ── */}
-      <div className="w-full md:w-1/2 flex flex-col min-h-screen" style={{ background: '#0a0f1e' }}>
+      <div className="w-full md:w-1/2 flex flex-col flex-1" style={{ background: '#0a0f1e' }}>
         {/* Top bar */}
         <div className="flex items-center justify-between px-8 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
           {/* Mobile logo */}
@@ -126,7 +126,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form area */}
-        <div className="flex-1 flex items-center justify-center px-8 py-12">
+        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-10 sm:py-12">
           <div className="w-full max-w-sm space-y-8">
             {/* Header */}
             <div>

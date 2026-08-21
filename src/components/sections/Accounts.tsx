@@ -54,19 +54,19 @@ export function Accounts() {
   const inView = useInView(ref, { once: true, margin: '-100px' });
 
   return (
-    <section id="accounts" className="relative py-24 md:py-32">
+    <section id="accounts" className="relative py-16 md:py-32">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
-        <div className="mb-16 text-center">
+        <div className="mb-10 md:mb-16 text-center">
           <span className="text-xs font-semibold tracking-wider text-primary uppercase">Accounts</span>
-          <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
+          <h2 className="mt-3 font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
             Choose the account that fits you
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty">
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty text-sm md:text-base">
             Whether you are managing daily spending, building savings, or running a business, Wexfordfin has an account for you.
           </p>
         </div>
 
-        <div ref={ref} className="grid gap-6 lg:grid-cols-3">
+        <div ref={ref} className="grid gap-5 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account, index) => (
             <motion.div
               key={account.name}

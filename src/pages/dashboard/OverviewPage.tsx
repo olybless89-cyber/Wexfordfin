@@ -88,7 +88,7 @@ export default function DashboardOverview() {
         {/* Account Cards */}
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your Accounts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {loading
               ? Array(3).fill(0).map((_, i) => (
                 <Card key={i} className="animate-pulse bg-card border-border">
@@ -136,7 +136,7 @@ export default function DashboardOverview() {
         {/* Quick Actions */}
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Transfer', href: '/dashboard/transfer', icon: ArrowLeftRight, color: 'text-primary', bg: 'bg-primary/10' },
               { label: 'Deposit', href: '/dashboard/deposit', icon: ArrowDownLeft, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },

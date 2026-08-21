@@ -48,39 +48,39 @@ export function Features() {
   const inView = useInView(ref, { once: true, margin: '-100px' });
 
   return (
-    <section id="features" className="relative py-24 md:py-32">
+    <section id="features" className="relative py-16 md:py-32">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
-        <div className="mb-16 text-center">
+        <div className="mb-10 md:mb-16 text-center">
           <span className="text-xs font-semibold tracking-wider text-primary uppercase">Why Wexfordfin</span>
-          <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
+          <h2 className="mt-3 font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
             Built for how you bank today
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty">
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-pretty text-sm md:text-base">
             Every feature is designed to save you time, cut unnecessary costs, and keep your money working for you.
           </p>
         </div>
 
         {/* Premium fintech/banking hero banner for features section */}
-        <div className="mb-12 relative rounded-3xl overflow-hidden border border-primary/20 shadow-xl">
+        <div className="mb-8 md:mb-12 relative rounded-2xl md:rounded-3xl overflow-hidden border border-primary/20 shadow-xl">
           <img
             src="https://miaoda-site-img.s3cdn.medo.dev/images/KLing_c76b06f4-0159-40d4-9176-6e2384413ef1.jpg"
             alt="Premium digital banking fintech abstract technology"
-            className="w-full h-48 md:h-64 object-cover"
+            className="w-full h-40 md:h-64 object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent flex items-center">
-            <div className="px-8 md:px-12">
-              <p className="text-xs font-semibold tracking-wider text-primary uppercase mb-2">Technology</p>
-              <h3 className="font-heading text-2xl md:text-3xl font-bold text-foreground text-balance">
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/60 to-transparent flex items-center">
+            <div className="px-5 md:px-12 max-w-lg">
+              <p className="text-xs font-semibold tracking-wider text-primary uppercase mb-1 md:mb-2">Wexfordfin Technology</p>
+              <h3 className="font-heading text-lg md:text-3xl font-bold text-foreground text-balance">
                 Next-generation financial infrastructure
               </h3>
-              <p className="mt-2 text-sm text-muted-foreground max-w-md text-pretty">
+              <p className="mt-1 md:mt-2 text-xs md:text-sm text-muted-foreground max-w-md text-pretty hidden sm:block">
                 Built on enterprise-grade systems with real-time processing, AI fraud detection, and 99.99% uptime.
               </p>
             </div>
           </div>
         </div>
 
-        <div ref={ref} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div ref={ref} className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}

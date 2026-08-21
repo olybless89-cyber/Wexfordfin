@@ -28,7 +28,7 @@ export function Hero() {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden min-h-screen flex items-center pt-20"
+      className="relative overflow-hidden min-h-screen flex items-center pt-16 md:pt-20"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -48,10 +48,20 @@ export function Hero() {
               alt={bgSlides[current].label}
               className="w-full h-full object-cover"
             />
-            {/* Brand overlay — Wexfordfin name on every background slide */}
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-start p-8 md:p-14">
-              <span className="font-heading text-4xl md:text-6xl font-extrabold tracking-[0.2em] text-white/25 select-none">
+            {/* Large WEXFORDFIN watermark — bottom-left on every slide */}
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-start p-5 md:p-14">
+              <span
+                className="font-heading font-extrabold tracking-[0.18em] text-white/20 select-none uppercase leading-none"
+                style={{ fontSize: 'clamp(1.8rem, 7vw, 5.5rem)' }}
+              >
                 WEXFORDFIN
+              </span>
+            </div>
+            {/* Top-right logo badge */}
+            <div className="pointer-events-none absolute top-20 right-4 md:right-10 flex items-center gap-2 opacity-60">
+              <ShieldCheck className="h-5 w-5 md:h-6 md:w-6 text-white" />
+              <span className="font-heading text-sm md:text-base font-bold tracking-widest text-white uppercase">
+                Wexfordfin
               </span>
             </div>
           </motion.div>
@@ -76,24 +86,24 @@ export function Hero() {
         )}
       </div>
 
-      {/* ── Slide nav arrows ── */}
+      {/* ── Slide nav arrows — hidden on small phones, show on sm+ ── */}
       <button
         onClick={() => { prev(); setPaused(true); }}
         aria-label="Previous slide"
-        className="hero-arrow-btn absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200"
+        className="hero-arrow-btn absolute left-2 sm:left-4 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full transition-all duration-200"
       >
-        <ChevronLeft className="h-5 w-5" />
+        <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
       </button>
       <button
         onClick={() => { next(); setPaused(true); }}
         aria-label="Next slide"
-        className="hero-arrow-btn absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200"
+        className="hero-arrow-btn absolute right-2 sm:right-4 top-1/2 z-20 -translate-y-1/2 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full transition-all duration-200"
       >
-        <ChevronRight className="h-5 w-5" />
+        <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
       </button>
 
       {/* ── Slide dots ── */}
-      <div className="absolute bottom-12 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2">
+      <div className="absolute bottom-10 sm:bottom-12 left-1/2 z-20 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2">
         {bgSlides.map((_, i) => (
           <button
             key={i}
@@ -101,8 +111,8 @@ export function Hero() {
             aria-label={`Slide ${i + 1}`}
             className="transition-all duration-300 rounded-full"
             style={{
-              width: i === current ? 28 : 8,
-              height: 8,
+              width: i === current ? 24 : 7,
+              height: 7,
               background: i === current ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
             }}
           />
@@ -110,12 +120,12 @@ export function Hero() {
       </div>
 
       {/* ── Foreground: Hero copy ── */}
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-20 md:px-6 text-center">
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-16 sm:py-20 md:px-6 text-center">
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-5 text-xs font-bold tracking-[0.25em] uppercase text-white/80"
+          className="mb-4 md:mb-5 text-xs font-bold tracking-[0.25em] uppercase text-white/80"
         >
           Simple, Quick, Secured
         </motion.p>
@@ -124,10 +134,10 @@ export function Hero() {
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.1 }}
-          className="font-heading text-4xl font-extrabold leading-[1.12] tracking-tight text-white md:text-6xl lg:text-7xl text-balance drop-shadow-[0_2px_24px_rgba(0,0,0,0.5)]"
+          className="font-heading text-3xl sm:text-4xl font-extrabold leading-[1.12] tracking-tight text-white md:text-6xl lg:text-7xl text-balance drop-shadow-[0_2px_24px_rgba(0,0,0,0.5)]"
         >
-          Transfer Money Across<br />
-          The World{' '}
+          Transfer Money Across<br className="hidden sm:block" />
+          {' '}The World{' '}
           <span className="hero-accent-text">In Real Time</span>
         </motion.h1>
 
@@ -135,7 +145,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.22 }}
-          className="mx-auto mt-6 max-w-xl text-lg font-light leading-relaxed text-white/70 tracking-wide text-pretty"
+          className="mx-auto mt-5 md:mt-6 max-w-xl text-base md:text-lg font-light leading-relaxed text-white/70 tracking-wide text-pretty"
         >
           Trusted by millions. Built for everyone.
         </motion.p>
@@ -144,18 +154,18 @@ export function Hero() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.34 }}
-          className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          className="mt-8 md:mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <a
             href="/register"
-            className="hero-cta-primary group inline-flex items-center gap-2 rounded-lg px-8 py-4 text-sm font-bold transition-all duration-200"
+            className="hero-cta-primary group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg px-8 py-4 text-sm font-bold transition-all duration-200"
           >
             Online Banking
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </a>
           <a
             href="#features"
-            className="hero-cta-outline inline-flex items-center gap-3 rounded-lg px-7 py-4 text-sm font-semibold transition-all duration-200"
+            className="hero-cta-outline inline-flex w-full sm:w-auto items-center justify-center gap-3 rounded-lg px-7 py-4 text-sm font-semibold transition-all duration-200"
           >
             <span className="hero-cta-play flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/70">
               <svg viewBox="0 0 16 16" fill="white" className="h-3 w-3 ml-0.5">
@@ -171,7 +181,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.48 }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-6"
+          className="mt-10 md:mt-12 flex flex-wrap items-center justify-center gap-4 md:gap-6"
         >
           {[
             { icon: ShieldCheck, label: 'FDIC Insured' },
@@ -191,7 +201,7 @@ export function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="mt-8 text-xs font-medium tracking-widest uppercase text-white/40"
+          className="mt-6 md:mt-8 text-xs font-medium tracking-widest uppercase text-white/40"
         >
           {bgSlides[current].label}
         </motion.p>

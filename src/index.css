@@ -5,6 +5,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Mobile-first base resets ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+img, video { max-width: 100%; height: auto; }
+input, button, textarea, select { font: inherit; }
+
 /* ─────────────────────────────────────────────────────────────
    DESIGN SYSTEM — All colors in HSL
    Dark dashboard theme is default; landing page overrides via
@@ -254,12 +260,20 @@
 }
 
 .banking-slider-img {
-  height: 420px;
+  height: 260px;
   display: block;
 }
 
+@media (min-width: 480px) {
+  .banking-slider-img { height: 340px; }
+}
+
 @media (min-width: 768px) {
-  .banking-slider-img { height: 520px; }
+  .banking-slider-img { height: 480px; }
+}
+
+@media (min-width: 1024px) {
+  .banking-slider-img { height: 540px; }
 }
 
 .banking-slider-overlay {
@@ -337,6 +351,47 @@
 .landing-light .rounded-2xl.border.border-border.bg-card.p-6 {
   background-color: #f7f9ff;
   border-color: #dde8ff;
+}
+
+/* ── Mobile dashboard improvements ─────────────────────── */
+@media (max-width: 767px) {
+  /* Ensure dashboard cards don't overflow on small screens */
+  .dashboard-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tighten admin/dashboard table horizontal scroll */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reduce large headings on mobile */
+  .text-4xl { font-size: 1.75rem; line-height: 1.2; }
+  .text-3xl { font-size: 1.5rem; line-height: 1.25; }
+}
+
+/* ── Auth pages (Login / Register) mobile fixes ──────── */
+@media (max-width: 767px) {
+  /* Full-height single column on mobile */
+  .auth-split-layout {
+    flex-direction: column;
+    min-height: 100svh;
+  }
+  /* Hide hero panel on mobile — form takes full width */
+  .auth-hero-panel {
+    display: none;
+  }
+  .auth-form-panel {
+    width: 100%;
+  }
+}
+
+/* ── Landing page section mobile spacing ─────────────── */
+@media (max-width: 639px) {
+  .landing-light section {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
 }
 
 /* Scrollbar */

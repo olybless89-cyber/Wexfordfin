@@ -30,19 +30,19 @@ export function Security() {
   const inView = useInView(ref, { once: true, margin: '-100px' });
 
   return (
-    <section id="security" className="relative py-24 md:py-32">
+    <section id="security" className="relative py-16 md:py-32">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+        <div className="grid items-center gap-10 md:gap-12 lg:grid-cols-2 lg:gap-20">
           <div>
             <span className="text-xs font-semibold tracking-wider text-primary uppercase">Security</span>
-            <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
+            <h2 className="mt-3 font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground md:text-4xl text-balance">
               Your money, protected around the clock
             </h2>
-            <p className="mt-4 max-w-lg text-muted-foreground text-pretty">
+            <p className="mt-4 max-w-lg text-muted-foreground text-pretty text-sm md:text-base">
               Security is not an afterthought at Wexfordfin. It is built into every layer of our platform, from the app on your phone to the vaults that hold your deposits.
             </p>
 
-            <div className="mt-10 grid gap-6 sm:grid-cols-2">
+            <div className="mt-8 md:mt-10 grid gap-5 sm:grid-cols-2">
               {securityFeatures.map((feature, index) => (
                 <motion.div
                   key={feature.title}
@@ -56,8 +56,8 @@ export function Security() {
                     <feature.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-heading text-base font-semibold text-foreground">{feature.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
+                    <h3 className="font-heading text-sm md:text-base font-semibold text-foreground">{feature.title}</h3>
+                    <p className="mt-1 text-xs md:text-sm leading-relaxed text-muted-foreground text-pretty">
                       {feature.description}
                     </p>
                   </div>
@@ -70,10 +70,10 @@ export function Security() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative rounded-3xl border border-border bg-card overflow-hidden"
+            className="relative rounded-2xl md:rounded-3xl border border-border bg-card overflow-hidden"
           >
             {/* Premium vault/security image */}
-            <div className="relative h-48 overflow-hidden">
+            <div className="relative h-40 md:h-48 overflow-hidden">
               <img
                 src="https://miaoda-site-img.s3cdn.medo.dev/images/KLing_242eeddc-bc76-4fb3-83d4-4a204406d1bb.jpg"
                 alt="Bank vault security encryption abstract technology"
@@ -81,8 +81,8 @@ export function Security() {
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/90" />
             </div>
-            <div className="p-8">
-              <div className="mb-6 flex items-center justify-between">
+            <div className="p-5 md:p-8">
+              <div className="mb-5 md:mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <Scan className="h-5 w-5" />
@@ -94,19 +94,17 @@ export function Security() {
                 </div>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Live</span>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-xl bg-secondary p-4">
-                  <span className="text-sm text-muted-foreground">Encrypted sessions</span>
-                  <span className="font-heading text-sm font-semibold text-foreground">100%</span>
-                </div>
-                <div className="flex items-center justify-between rounded-xl bg-secondary p-4">
-                  <span className="text-sm text-muted-foreground">Fraud blocked today</span>
-                  <span className="font-heading text-sm font-semibold text-foreground">$0</span>
-                </div>
-                <div className="flex items-center justify-between rounded-xl bg-secondary p-4">
-                  <span className="text-sm text-muted-foreground">Uptime</span>
-                  <span className="font-heading text-sm font-semibold text-foreground">99.99%</span>
-                </div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Encrypted sessions', value: '100%' },
+                  { label: 'Fraud blocked today', value: '$0' },
+                  { label: 'Uptime', value: '99.99%' },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between rounded-xl bg-secondary p-3 md:p-4">
+                    <span className="text-xs md:text-sm text-muted-foreground">{label}</span>
+                    <span className="font-heading text-xs md:text-sm font-semibold text-foreground">{value}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>

@@ -58,17 +58,17 @@ export function BankingSlider() {
   const slide = slides[current];
 
   return (
-    <section className="banking-slider-section py-20 md:py-28">
+    <section className="banking-slider-section py-14 md:py-28">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
         {/* Section header */}
-        <div className="mb-12 text-center">
+        <div className="mb-8 md:mb-12 text-center">
           <span className="banking-slider-tag inline-block rounded-full px-4 py-1.5 text-xs font-bold tracking-widest uppercase mb-3">
             Our Spaces
           </span>
-          <h2 className="banking-slider-heading font-heading text-3xl font-extrabold tracking-tight md:text-4xl text-balance">
+          <h2 className="banking-slider-heading font-heading text-2xl sm:text-3xl font-extrabold tracking-tight md:text-4xl text-balance">
             Where Tradition Meets Innovation
           </h2>
-          <p className="banking-slider-sub mx-auto mt-3 max-w-2xl text-base text-pretty">
+          <p className="banking-slider-sub mx-auto mt-3 max-w-2xl text-sm md:text-base text-pretty">
             Step inside Wexfordfin — from grand banking halls to iconic headquarters buildings
             — all built to serve you with excellence.
           </p>
@@ -76,7 +76,7 @@ export function BankingSlider() {
 
         {/* Main slider */}
         <div
-          className="banking-slider-frame relative overflow-hidden rounded-3xl shadow-2xl"
+          className="banking-slider-frame relative overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
@@ -98,21 +98,31 @@ export function BankingSlider() {
               {/* Gradient overlay */}
               <div className="absolute inset-0 banking-slider-overlay" />
 
+              {/* Persistent WEXFORDFIN watermark on every slide */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-6 md:pr-12 opacity-20">
+                <span
+                  className="font-heading font-extrabold tracking-[0.15em] text-white select-none uppercase"
+                  style={{ fontSize: 'clamp(1.2rem, 5vw, 3.5rem)', writingMode: 'horizontal-tb' }}
+                >
+                  WEXFORDFIN
+                </span>
+              </div>
+
               {/* Caption */}
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="absolute bottom-0 left-0 right-0 p-6 md:p-10"
+                className="absolute bottom-0 left-0 right-0 p-4 md:p-10"
               >
-                <span className="banking-slider-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold mb-3">
+                <span className="banking-slider-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold mb-2 md:mb-3">
                   <slide.icon className="h-3.5 w-3.5" />
                   {slide.tag}
                 </span>
-                <h3 className="banking-slider-caption-title font-heading text-xl md:text-2xl font-bold text-white">
+                <h3 className="banking-slider-caption-title font-heading text-base md:text-2xl font-bold text-white">
                   {slide.label}
                 </h3>
-                <p className="banking-slider-caption-body mt-1 max-w-xl text-sm leading-relaxed text-white/80">
+                <p className="banking-slider-caption-body mt-1 max-w-xl text-xs md:text-sm leading-relaxed text-white/80 hidden sm:block">
                   {slide.caption}
                 </p>
               </motion.div>
@@ -123,16 +133,16 @@ export function BankingSlider() {
           <button
             onClick={() => { prev(); setPaused(true); }}
             aria-label="Previous slide"
-            className="banking-slider-arrow absolute left-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200"
+            className="banking-slider-arrow absolute left-2 md:left-4 top-1/2 -translate-y-1/2 flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-full transition-all duration-200"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
           </button>
           <button
             onClick={() => { next(); setPaused(true); }}
             aria-label="Next slide"
-            className="banking-slider-arrow absolute right-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200"
+            className="banking-slider-arrow absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-full transition-all duration-200"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
           </button>
 
           {/* Progress bar */}
@@ -150,16 +160,16 @@ export function BankingSlider() {
         </div>
 
         {/* Thumbnail dots + counter */}
-        <div className="mt-8 flex items-center justify-center gap-3">
+        <div className="mt-5 md:mt-8 flex items-center justify-center gap-2 md:gap-3 overflow-x-auto pb-1">
           {slides.map((s, i) => (
             <button
               key={i}
               onClick={() => { setCurrent(i); setPaused(true); }}
               aria-label={`Go to slide ${i + 1}`}
-              className="relative overflow-hidden rounded-xl transition-all duration-300"
+              className="relative flex-shrink-0 overflow-hidden rounded-lg md:rounded-xl transition-all duration-300"
               style={{
-                width: i === current ? 72 : 48,
-                height: 40,
+                width: i === current ? 56 : 40,
+                height: 32,
               }}
             >
               <img
@@ -169,12 +179,12 @@ export function BankingSlider() {
                 style={{ opacity: i === current ? 1 : 0.45 }}
               />
               {i === current && (
-                <div className="absolute inset-0 rounded-xl banking-slider-thumb-active-ring" />
+                <div className="absolute inset-0 rounded-lg md:rounded-xl banking-slider-thumb-active-ring" />
               )}
             </button>
           ))}
 
-          <span className="banking-slider-counter ml-4 text-sm font-semibold tabular-nums">
+          <span className="banking-slider-counter ml-2 md:ml-4 text-xs md:text-sm font-semibold tabular-nums flex-shrink-0">
             {String(current + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
           </span>
         </div>

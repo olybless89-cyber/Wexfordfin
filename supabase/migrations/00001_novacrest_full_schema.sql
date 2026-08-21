@@ -2,6 +2,14 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Idempotent: drop conflicting leftover enums from any prior schema
+DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TYPE IF EXISTS public.user_role CASCADE;
+DROP TYPE IF EXISTS public.account_type CASCADE;
+DROP TYPE IF EXISTS public.transaction_type CASCADE;
+DROP TYPE IF EXISTS public.transaction_status CASCADE;
+DROP TYPE IF EXISTS public.request_status CASCADE;
+
 -- ============================================================
 -- ENUMS
 -- ============================================================
@@ -14,6 +22,7 @@ CREATE TYPE public.request_status AS ENUM ('pending', 'approved', 'rejected');
 -- ============================================================
 -- PROFILES
 -- ============================================================
+DROP TABLE IF EXISTS public.profiles CASCADE;
 CREATE TABLE public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE NOT NULL,
@@ -30,8 +39,9 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- ACCOUNTS
 -- ============================================================
+DROP TABLE IF EXISTS public.accounts CASCADE;
 CREATE TABLE public.accounts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   account_type public.account_type NOT NULL,
   account_number text UNIQUE NOT NULL,
@@ -47,8 +57,9 @@ ALTER TABLE public.accounts ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- TRANSACTIONS
 -- ============================================================
+DROP TABLE IF EXISTS public.transactions CASCADE;
 CREATE TABLE public.transactions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   from_account_id uuid REFERENCES public.accounts(id),
   to_account_id uuid REFERENCES public.accounts(id),
   user_id uuid NOT NULL REFERENCES public.profiles(id),
@@ -56,7 +67,7 @@ CREATE TABLE public.transactions (
   amount numeric(15,2) NOT NULL,
   status public.transaction_status NOT NULL DEFAULT 'completed',
   description text,
-  reference_number text UNIQUE NOT NULL DEFAULT 'TXN-' || upper(substr(replace(uuid_generate_v4()::text,'-',''),1,12)),
+  reference_number text UNIQUE NOT NULL DEFAULT 'TXN-' || upper(substr(replace(gen_random_uuid()::text,'-',''),1,12)),
   performed_by_admin uuid REFERENCES public.profiles(id),
   created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -66,8 +77,9 @@ ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- HOLDS
 -- ============================================================
+DROP TABLE IF EXISTS public.holds CASCADE;
 CREATE TABLE public.holds (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id uuid NOT NULL REFERENCES public.accounts(id) ON DELETE CASCADE,
   user_id uuid NOT NULL REFERENCES public.profiles(id),
   amount numeric(15,2) NOT NULL,
@@ -84,8 +96,9 @@ ALTER TABLE public.holds ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- DEPOSIT REQUESTS
 -- ============================================================
+DROP TABLE IF EXISTS public.deposit_requests CASCADE;
 CREATE TABLE public.deposit_requests (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id),
   account_id uuid NOT NULL REFERENCES public.accounts(id),
   amount numeric(15,2) NOT NULL,
@@ -101,8 +114,9 @@ ALTER TABLE public.deposit_requests ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- WITHDRAWAL REQUESTS
 -- ============================================================
+DROP TABLE IF EXISTS public.withdrawal_requests CASCADE;
 CREATE TABLE public.withdrawal_requests (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id),
   account_id uuid NOT NULL REFERENCES public.accounts(id),
   amount numeric(15,2) NOT NULL,
@@ -118,8 +132,9 @@ ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- NOTIFICATIONS
 -- ============================================================
+DROP TABLE IF EXISTS public.notifications CASCADE;
 CREATE TABLE public.notifications (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.profiles(id),
   title text NOT NULL,
   message text NOT NULL,
@@ -132,8 +147,9 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- ADMIN MESSAGES (Webmail inbox)
 -- ============================================================
+DROP TABLE IF EXISTS public.admin_messages CASCADE;
 CREATE TABLE public.admin_messages (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   from_user_id uuid REFERENCES public.profiles(id),
   from_name text,
   from_email text,
@@ -190,6 +206,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, ShieldCheck, TrendingUp, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const bgSlides = [
-  { img: '/images/hero/branded/slide-01-banking-hall.png', label: 'Wexfordfin Grand Banking Hall' },
-  { img: '/images/hero/branded/slide-02-banking-lobby.png', label: 'Wexfordfin Banking Lobby' },
-  { img: '/images/hero/branded/slide-03-global-hq.png', label: 'Wexfordfin Global HQ' },
-  { img: '/images/hero/branded/slide-04-heritage.png', label: 'Wexfordfin Heritage Building' },
-  { img: '/images/hero/branded/slide-05-tower-night.png', label: 'Wexfordfin Tower — Night' },
+  { img: '/images/hero/branded/slide-01-banking-hall.jpg', label: 'Wexfordfin Grand Banking Hall' },
+  { img: '/images/hero/branded/slide-02-banking-lobby.jpg', label: 'Wexfordfin Banking Lobby' },
+  { img: '/images/hero/branded/slide-03-global-hq.jpg', label: 'Wexfordfin Global HQ' },
+  { img: '/images/hero/branded/slide-04-heritage.jpg', label: 'Wexfordfin Heritage Building' },
+  { img: '/images/hero/branded/slide-05-tower-night.jpg', label: 'Wexfordfin Tower — Night' },
 ];
 
 export function Hero() {

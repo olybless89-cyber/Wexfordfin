@@ -97,10 +97,7 @@ Deno.serve(async (req) => {
       if (fromAcct.available_balance < amount) throw new Error('Insufficient funds');
       if (fromAcct.user_id !== user_id) throw new Error('Unauthorized');
 
-      const { data: toAcct } = await supabase.from('accounts').select('*').eq('account_number', recipient_account_number.trim()).single();
-      if (!toAcct) throw new Error('Recipient account not found. Please verify the account number.');
-      if (!toAcct.is_active) throw new Error('Recipient account is inactive');
-      if (toAcct.user_id === user_id) throw new Error('Cannot transfer to your own account via external transfer');
+      const { data: toAcct } = await supabase.from('accounts').select('*').eq('account_number', recipient_account_number.trim()).maybeSingle();
 
       // Build enriched description with bank details
       const details: string[] = [`External transfer to ${recipient_account_number}`];
@@ -111,7 +108,11 @@ Deno.serve(async (req) => {
       if (transfer_purpose) details.push(`Purpose: ${transfer_purpose}`);
       if (memo) details.push(`Memo: ${memo}`);
       const outDesc = details.join(' | ');
-      const inDesc = `External transfer received from ${fromAcct.account_number}${memo ? ' | Memo: ' + memo : ''}`;
+
+      if (toAcct) {
+        if (!toAcct.is_active) throw new Error('Recipient account is inactive');
+        if (toAcct.user_id === user_id) throw new Error('Cannot transfer to your own account via external transfer');
+      }
 
       await supabase.from('accounts').update({
         balance: fromAcct.balance - amount,
@@ -119,17 +120,27 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString()
       }).eq('id', from_account_id);
 
-      await supabase.from('accounts').update({
-        balance: toAcct.balance + amount,
-        available_balance: toAcct.available_balance + amount,
-        updated_at: new Date().toISOString()
-      }).eq('id', toAcct.id);
-
       const ref = 'TXN-' + Math.random().toString(36).slice(2, 14).toUpperCase();
-      await supabase.from('transactions').insert([
-        { from_account_id, to_account_id: toAcct.id, user_id, transaction_type: 'transfer_out', amount, status: 'completed', reference_number: ref + '-OUT', description: outDesc },
-        { from_account_id, to_account_id: toAcct.id, user_id: toAcct.user_id, transaction_type: 'transfer_in', amount, status: 'completed', reference_number: ref + '-IN', description: inDesc },
-      ]);
+
+      if (toAcct) {
+        // Recipient on-platform: credit and record both legs
+        const inDesc = `External transfer received from ${fromAcct.account_number}${memo ? ' | Memo: ' + memo : ''}`;
+        await supabase.from('accounts').update({
+          balance: toAcct.balance + amount,
+          available_balance: toAcct.available_balance + amount,
+          updated_at: new Date().toISOString()
+        }).eq('id', toAcct.id);
+        await supabase.from('transactions').insert([
+          { from_account_id, to_account_id: toAcct.id, user_id, transaction_type: 'transfer_out', amount, status: 'completed', reference_number: ref + '-OUT', description: outDesc },
+          { from_account_id, to_account_id: toAcct.id, user_id: toAcct.user_id, transaction_type: 'transfer_in', amount, status: 'completed', reference_number: ref + '-IN', description: inDesc },
+        ]);
+      } else {
+        // Recipient off-platform (true external wire): debit only
+        await supabase.from('transactions').insert({
+          from_account_id, user_id, transaction_type: 'transfer_out', amount, status: 'completed', reference_number: ref + '-OUT', description: outDesc,
+        });
+      }
+
       return new Response(JSON.stringify({ success: true, reference: ref + '-OUT' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

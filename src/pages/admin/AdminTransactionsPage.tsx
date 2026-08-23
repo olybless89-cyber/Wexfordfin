@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAllTransactions, updateTransaction, deleteTransaction } from '@/services/api';
+import { getAllTransactions, updateTransaction, deleteTransaction, getAllAccounts, getAllProfiles } from '@/services/api';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Transaction } from '@/types/types';
+import type { Transaction, Account, Profile } from '@/types/types';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -29,22 +29,35 @@ interface EditForm {
   status: string;
   description: string;
   reference_number: string;
+  from_account_id: string;
+  to_account_id: string;
+  user_id: string;
+  created_at: string;
 }
+
+const NONE = '__none__';
 
 export default function AdminTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [typeFilter, setTypeFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
   // Edit state
   const [editTx, setEditTx] = useState<Transaction | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ transaction_type: '', amount: '', status: '', description: '', reference_number: '' });
+  const [editForm, setEditForm] = useState<EditForm>({ transaction_type: '', amount: '', status: '', description: '', reference_number: '', from_account_id: '', to_account_id: '', user_id: '', created_at: '' });
   const [saving, setSaving] = useState(false);
 
   // Delete state
   const [deleteTxId, setDeleteTxId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    getAllAccounts().then(setAccounts);
+    getAllProfiles().then(setProfiles);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -63,6 +76,10 @@ export default function AdminTransactionsPage() {
       status: tx.status,
       description: tx.description ?? '',
       reference_number: tx.reference_number ?? '',
+      from_account_id: tx.from_account_id ?? NONE,
+      to_account_id: tx.to_account_id ?? NONE,
+      user_id: tx.user_id,
+      created_at: tx.created_at ? tx.created_at.slice(0, 16) : '',
     });
   }
 
@@ -75,13 +92,16 @@ export default function AdminTransactionsPage() {
       status: editForm.status,
       description: editForm.description,
       reference_number: editForm.reference_number,
+      from_account_id: editForm.from_account_id === NONE ? editTx.from_account_id ?? undefined : editForm.from_account_id,
+      to_account_id: editForm.to_account_id === NONE ? editTx.to_account_id ?? undefined : editForm.to_account_id,
+      user_id: editForm.user_id,
+      created_at: editForm.created_at ? new Date(editForm.created_at).toISOString() : undefined,
     });
     setSaving(false);
     if (error) { toast.error(`Failed to update: ${error}`); return; }
-    setTransactions(prev => prev.map(t => t.id === editTx.id
-      ? { ...t, ...editForm, amount: parseFloat(editForm.amount), transaction_type: editForm.transaction_type as import('@/types/types').TransactionType, status: editForm.status as import('@/types/types').TransactionStatus }
-      : t
-    ));
+    setTransactions(prev => prev.map(t => t.id === editTx.id ? { ...t, ...transactions.find(x => x.id === editTx.id) } : t));
+    // simplest correct refresh
+    getAllTransactions(1, 50).then(setTransactions);
     toast.success('Transaction updated successfully');
     setEditTx(null);
   }
@@ -201,15 +221,56 @@ export default function AdminTransactionsPage() {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Amount (USD)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editForm.amount}
+                  onChange={e => setEditForm(f => ({ ...f, amount: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date / Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={editForm.created_at}
+                  onChange={e => setEditForm(f => ({ ...f, created_at: e.target.value }))}
+                />
+              </div>
+            </div>
             <div className="space-y-1.5">
-              <Label>Amount (USD)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={editForm.amount}
-                onChange={e => setEditForm(f => ({ ...f, amount: e.target.value }))}
-              />
+              <Label>User</Label>
+              <Select value={editForm.user_id} onValueChange={v => setEditForm(f => ({ ...f, user_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Owner" /></SelectTrigger>
+                <SelectContent>
+                  {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.email}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>From Account</Label>
+                <Select value={editForm.from_account_id} onValueChange={v => setEditForm(f => ({ ...f, from_account_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>— none —</SelectItem>
+                    {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.account_number}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>To Account</Label>
+                <Select value={editForm.to_account_id} onValueChange={v => setEditForm(f => ({ ...f, to_account_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>— none —</SelectItem>
+                    {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.account_number}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Reference Number</Label>

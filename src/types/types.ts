@@ -119,4 +119,23 @@ export interface AdminMessage {
   message: string;
   is_read: boolean;
   created_at: string;
+  direction: 'inbound' | 'outbound';
+  to_email: string | null;
+  to_name: string | null;
+  parent_id: string | null;
+  delivery_status: string;
+  sent_at: string | null;
+}
+
+export interface MailSettings {
+  id: number;
+  smtp_host: string | null;
+  smtp_port: number | null;
+  smtp_user: string | null;
+  smtp_pass: string | null;
+  from_name: string;
+  from_email: string;
+  forward_enabled: boolean;
+  forward_to: string | null;
+  notifications_enabled: boolean;
 }

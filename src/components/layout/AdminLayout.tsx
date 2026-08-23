@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import {
   LayoutDashboard, Users, ArrowLeftRight, Download, Upload,
-  Lock, Bell, Mail, LogOut, Shield, Menu,
+  Lock, Bell, Mail, LogOut, Shield, Menu, Settings,
   ChevronRight, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const navItems = [
   { label: 'Holds', href: '/admin/holds', icon: Lock },
   { label: 'Notifications', href: '/admin/notifications', icon: Bell },
   { label: 'Webmail', href: '/admin/webmail', icon: Mail },
+  { label: 'Mail Settings', href: '/admin/mail-settings', icon: Settings },
   { label: 'Statistics', href: '/admin/stats', icon: BarChart3 },
 ];
 

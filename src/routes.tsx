@@ -22,6 +22,7 @@ import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 import AdminHoldsPage from './pages/admin/AdminHoldsPage';
 import AdminWebmailPage from './pages/admin/AdminWebmailPage';
+import AdminMailSettingsPage from './pages/admin/AdminMailSettingsPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminStatsPage from './pages/admin/AdminStatsPage';
 
@@ -60,6 +61,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Transactions', path: '/admin/transactions', element: <ProtectedRoute adminOnly><AdminTransactionsPage /></ProtectedRoute> },
   { name: 'Admin Holds', path: '/admin/holds', element: <ProtectedRoute adminOnly><AdminHoldsPage /></ProtectedRoute> },
   { name: 'Admin Webmail', path: '/admin/webmail', element: <ProtectedRoute adminOnly><AdminWebmailPage /></ProtectedRoute> },
+  { name: 'Admin Mail Settings', path: '/admin/mail-settings', element: <ProtectedRoute adminOnly><AdminMailSettingsPage /></ProtectedRoute> },
   { name: 'Admin Notifications', path: '/admin/notifications', element: <ProtectedRoute adminOnly><AdminNotificationsPage /></ProtectedRoute> },
   { name: 'Admin Stats', path: '/admin/stats', element: <ProtectedRoute adminOnly><AdminStatsPage /></ProtectedRoute> },
 ];

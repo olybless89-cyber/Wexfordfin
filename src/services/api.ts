@@ -116,20 +116,36 @@ export async function getAllTransactions(page = 1, pageSize = 50): Promise<Trans
   return Array.isArray(data) ? data : [];
 }
 
-export async function updateTransaction(
-  id: string,
-  fields: {
-    transaction_type?: string;
-    amount?: number;
-    status?: string;
-    description?: string;
-    reference_number?: string;
-  }
-): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from('transactions')
-    .update(fields)
-    .eq('id', id);
+export interface TransactionEdit {
+  transaction_type?: string;
+  amount?: number;
+  status?: string;
+  description?: string;
+  reference_number?: string;
+  from_account_id?: string;
+  to_account_id?: string;
+  user_id?: string;
+  created_at?: string;
+  performed_by_admin?: string;
+}
+
+// Full A-Z edit via admin RPC (transaction_type, amount, status, description,
+// reference_number, from/to accounts, user, performed_by, created_at)
+export async function updateTransaction(id: string, updates: TransactionEdit): Promise<{ error: string | null }> {
+  const toP = (t?: string) => (t ?? null);
+  const { error } = await supabase.rpc('admin_edit_transaction', {
+    p_id: id,
+    p_transaction_type: toP(updates.transaction_type),
+    p_amount: updates.amount ?? null,
+    p_status: toP(updates.status),
+    p_description: toP(updates.description),
+    p_reference_number: toP(updates.reference_number),
+    p_from_account_id: toP(updates.from_account_id),
+    p_to_account_id: toP(updates.to_account_id),
+    p_user_id: toP(updates.user_id),
+    p_created_at: toP(updates.created_at),
+    p_performed_by_admin: toP(updates.performed_by_admin),
+  });
   return { error: error?.message ?? null };
 }
 
@@ -229,8 +245,71 @@ export async function sendContactMessage(fromName: string, fromEmail: string, su
   return supabase.from('admin_messages').insert({ from_name: fromName, from_email: fromEmail, subject, message });
 }
 
+// Post a message as the current logged-in user (support ticket from dashboard)
+export async function sendUserSupportMessage(subject: string, message: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data: profile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single();
+  return supabase.from('admin_messages').insert({
+    from_user_id: user.id,
+    from_name: profile?.full_name || user.email,
+    from_email: profile?.email || user.email,
+    subject, message,
+  });
+}
+
+// Admin reply: stores in mailbox (thread via parent_id) and queues a real email
+export async function adminReplyMessage(parent: AdminMessage, replyText: string) {
+  const toEmail = parent.from_email;
+  if (!toEmail) return { error: 'Original sender has no email address' };
+
+  const { error } = await supabase.from('admin_messages').insert({
+    direction: 'outbound',
+    to_email: toEmail,
+    to_name: parent.from_name,
+    parent_id: parent.id,
+    subject: `Re: ${parent.subject.replace(/^Re:\s*/i, '')}`,
+    message: replyText,
+    is_read: true,
+    delivery_status: 'queued',
+  });
+  if (error) return { error: error.message };
+
+  // queue the actual email to the visitor
+  const { data: settings } = await supabase.from('mail_settings').select('from_name,from_email').eq('id', 1).single();
+  await supabase.from('mail_outbox').insert({
+    to_email: toEmail,
+    subject: `Re: ${parent.subject.replace(/^Re:\s*/i, '')}`,
+    body_html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+      <div style="background:#0a1628;padding:20px 24px"><span style="color:#fff;font-size:20px;font-weight:bold">Wexford</span><span style="color:#c9a227;font-size:20px;font-weight:bold">fin</span></div>
+      <div style="padding:24px"><p style="color:#4b5563;font-size:14px;line-height:1.7;white-space:pre-wrap">${replyText.replace(/</g, '&lt;')}</p>
+      <p style="color:#9ca3af;font-size:12px;margin-top:16px">— ${settings?.from_name || 'Wexfordfin Support'} · ${settings?.from_email || 'support@wexfordfin.com'}</p></div></div>`,
+    body_text: replyText,
+  });
+
+  // flush queue best-effort (works only when provider is configured)
+  await supabase.functions.invoke('send-email').catch(() => ({}));
+  return { error: null };
+}
+
 export async function markMessageRead(id: string) {
   return supabase.from('admin_messages').update({ is_read: true }).eq('id', id);
+}
+
+// ─── Mail Settings (admin) ─────────────────────────────────────────────────────
+
+export async function getMailSettings(): Promise<MailSettings | null> {
+  const { data } = await supabase.from('mail_settings').select('*').eq('id', 1).single();
+  return data;
+}
+
+export async function updateMailSettings(updates: Partial<Omit<MailSettings, 'id'>>) {
+  return supabase.from('mail_settings').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', 1);
+}
+
+export async function flushMailQueue(): Promise<{ sent: number; failed: number; queued: number; note?: string }> {
+  const { data } = await supabase.functions.invoke('send-email');
+  return data as { sent: number; failed: number; queued: number; note?: string };
 }
 
 // ─── Security Codes ────────────────────────────────────────────────────────────

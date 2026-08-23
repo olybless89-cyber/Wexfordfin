@@ -182,3 +182,9 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_edit_transaction(uuid, text, numeric, text, text, text, uuid, uuid, uuid, timestamptz, uuid) TO authenticated;
+
+DROP POLICY IF EXISTS "Admins can insert outbox" ON public.mail_outbox;
+CREATE POLICY "Admins can insert outbox"
+  ON public.mail_outbox FOR INSERT
+  TO authenticated
+  WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));

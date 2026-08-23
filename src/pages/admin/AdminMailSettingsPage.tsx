@@ -90,7 +90,7 @@ export default function AdminMailSettingsPage() {
                 type="password"
                 value={settings.smtp_pass || ''}
                 onChange={e => upd({ smtp_pass: e.target.value })}
-                placeholder="Paste provider API key (stored encrypted in DB)"
+                placeholder="Paste provider API key (stored in admin-only table)"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

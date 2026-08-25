@@ -2,7 +2,7 @@ import { supabase } from '@/db/supabase';
 import type {
   Profile, Account, Transaction, Hold,
   DepositRequest, WithdrawalRequest, Notification, AdminMessage,
-  SecurityCode, SecurityCodeType
+  SecurityCode, SecurityCodeType, MailSettings, MailOutbox
 } from '@/types/types';
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
@@ -258,38 +258,97 @@ export async function sendUserSupportMessage(subject: string, message: string) {
   });
 }
 
-// Admin reply: stores in mailbox (thread via parent_id) and queues a real email
+function brandedMailHtml(replyText: string, fromName: string, fromEmail: string) {
+  return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+      <div style="background:#0a1628;padding:20px 24px"><span style="color:#fff;font-size:20px;font-weight:bold">Wexford</span><span style="color:#c9a227;font-size:20px;font-weight:bold">fin</span></div>
+      <div style="padding:24px"><p style="color:#4b5563;font-size:14px;line-height:1.7;white-space:pre-wrap">${replyText.replace(/</g, '&lt;')}</p>
+      <p style="color:#9ca3af;font-size:12px;margin-top:16px">— ${fromName} · ${fromEmail}</p></div></div>`;
+}
+
+// Insert into mail_outbox with instant in-app delivery when the recipient is a
+// registered user (default webmail — no external provider needed).
+async function queueOutboundMail(toEmail: string, subject: string, text: string) {
+  const { data: settings } = await supabase.from('mail_settings').select('from_name,from_email').eq('id', 1).single();
+  const { data: recipient } = await supabase.from('profiles').select('id').eq('email', toEmail).maybeSingle();
+  const internal = !!recipient;
+  await supabase.from('mail_outbox').insert({
+    user_id: recipient?.id ?? null,
+    to_email: toEmail,
+    subject,
+    body_html: brandedMailHtml(text, settings?.from_name || 'Wexfordfin Support', settings?.from_email || 'support@wexfordfin.com'),
+    body_text: text,
+    status: internal ? 'sent' : 'pending',
+    sent_at: internal ? new Date().toISOString() : null,
+  });
+  if (!internal) {
+    // external recipient: best-effort flush (delivers when a provider is configured)
+    await supabase.functions.invoke('send-email').catch(() => ({}));
+  }
+  return internal;
+}
+
+// Admin reply: stores in mailbox (thread via parent_id) and delivers an email
 export async function adminReplyMessage(parent: AdminMessage, replyText: string) {
   const toEmail = parent.from_email;
   if (!toEmail) return { error: 'Original sender has no email address' };
+
+  const subject = `Re: ${parent.subject.replace(/^Re:\s*/i, '')}`;
+  const internal = await queueOutboundMail(toEmail, subject, replyText);
 
   const { error } = await supabase.from('admin_messages').insert({
     direction: 'outbound',
     to_email: toEmail,
     to_name: parent.from_name,
     parent_id: parent.id,
-    subject: `Re: ${parent.subject.replace(/^Re:\s*/i, '')}`,
+    subject,
     message: replyText,
     is_read: true,
-    delivery_status: 'queued',
+    delivery_status: internal ? 'delivered' : 'queued',
+    sent_at: new Date().toISOString(),
   });
   if (error) return { error: error.message };
-
-  // queue the actual email to the visitor
-  const { data: settings } = await supabase.from('mail_settings').select('from_name,from_email').eq('id', 1).single();
-  await supabase.from('mail_outbox').insert({
-    to_email: toEmail,
-    subject: `Re: ${parent.subject.replace(/^Re:\s*/i, '')}`,
-    body_html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-      <div style="background:#0a1628;padding:20px 24px"><span style="color:#fff;font-size:20px;font-weight:bold">Wexford</span><span style="color:#c9a227;font-size:20px;font-weight:bold">fin</span></div>
-      <div style="padding:24px"><p style="color:#4b5563;font-size:14px;line-height:1.7;white-space:pre-wrap">${replyText.replace(/</g, '&lt;')}</p>
-      <p style="color:#9ca3af;font-size:12px;margin-top:16px">— ${settings?.from_name || 'Wexfordfin Support'} · ${settings?.from_email || 'support@wexfordfin.com'}</p></div></div>`,
-    body_text: replyText,
-  });
-
-  // flush queue best-effort (works only when provider is configured)
-  await supabase.functions.invoke('send-email').catch(() => ({}));
   return { error: null };
+}
+
+// Admin compose: brand-new email to any address (user or external)
+export async function adminComposeMessage(toEmail: string, toName: string, subject: string, message: string) {
+  const internal = await queueOutboundMail(toEmail, subject, message);
+  const { error } = await supabase.from('admin_messages').insert({
+    direction: 'outbound',
+    to_email: toEmail,
+    to_name: toName || toEmail,
+    subject,
+    message,
+    is_read: true,
+    delivery_status: internal ? 'delivered' : 'queued',
+    sent_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+// ─── User Mailbox (default in-app webmail) ───────────────────────────────────
+
+export async function getMyEmails(): Promise<MailOutbox[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from('mail_outbox').select('*').eq('user_id', user.id)
+    .order('created_at', { ascending: false }).limit(100);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getMyUnreadMailCount(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const { count } = await supabase
+    .from('mail_outbox').select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id).eq('is_read', false);
+  return count ?? 0;
+}
+
+export async function markEmailRead(id: string) {
+  return supabase.from('mail_outbox').update({ is_read: true }).eq('id', id);
 }
 
 export async function markMessageRead(id: string) {
@@ -307,9 +366,9 @@ export async function updateMailSettings(updates: Partial<Omit<MailSettings, 'id
   return supabase.from('mail_settings').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', 1);
 }
 
-export async function flushMailQueue(): Promise<{ sent: number; failed: number; queued: number; note?: string }> {
+export async function flushMailQueue(): Promise<{ delivered_internal: number; sent_external: number; failed: number; awaiting_provider: number }> {
   const { data } = await supabase.functions.invoke('send-email');
-  return data as { sent: number; failed: number; queued: number; note?: string };
+  return data as { delivered_internal: number; sent_external: number; failed: number; awaiting_provider: number };
 }
 
 // ─── Security Codes ────────────────────────────────────────────────────────────

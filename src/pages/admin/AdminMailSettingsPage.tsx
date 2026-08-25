@@ -46,8 +46,7 @@ export default function AdminMailSettingsPage() {
     setFlushing(true);
     const res = await flushMailQueue();
     setFlushing(false);
-    if (res?.note) toast.warning(res.note);
-    else toast.success(`Queue flushed — sent: ${res.sent}, failed: ${res.failed}, queued: ${res.queued}`);
+    toast.success(`Queue flushed — delivered in-app: ${res.delivered_internal}, sent externally: ${res.sent_external}, failed: ${res.failed}, awaiting provider: ${res.awaiting_provider}`);
   }
 
   const provider = (settings.smtp_host || '').toLowerCase().includes('brevo') ? 'brevo'
@@ -60,16 +59,31 @@ export default function AdminMailSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Mail Settings</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Configure outbound email delivery for notifications, replies and optional forwarding to Gmail.
+            The built-in webmail delivers mail to registered users instantly — no provider needed. Add an external provider only if you also want copies sent over the internet (e.g. to Gmail).
           </p>
         </div>
 
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              Outbound Provider
-              <Badge variant={provider === 'none' ? 'destructive' : 'outline'}>
-                {provider === 'none' ? 'not configured' : provider}
+              Default Webmail (in-app)
+              <Badge variant="outline" className="text-green-500 border-green-500/30">active</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Every notification, reply and composed email addressed to a registered user is delivered instantly into their
+              dashboard <span className="text-foreground font-medium">Mailbox</span>. This is the default delivery channel and is always on.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              External Provider (optional)
+              <Badge variant={provider === 'none' ? 'secondary' : 'outline'}>
+                {provider === 'none' ? 'not configured — in-app only' : provider}
               </Badge>
             </CardTitle>
           </CardHeader>

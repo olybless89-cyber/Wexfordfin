@@ -11,6 +11,7 @@ import DepositPage from './pages/dashboard/DepositPage';
 import WithdrawPage from './pages/dashboard/WithdrawPage';
 import HoldsPage from './pages/dashboard/HoldsPage';
 import NotificationsPage from './pages/dashboard/NotificationsPage';
+import MailboxPage from './pages/dashboard/MailboxPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
 
 // Admin pages
@@ -50,6 +51,7 @@ export const routes: RouteConfig[] = [
   { name: 'Withdraw', path: '/dashboard/withdraw', element: <ProtectedRoute><WithdrawPage /></ProtectedRoute> },
   { name: 'Holds', path: '/dashboard/holds', element: <ProtectedRoute><HoldsPage /></ProtectedRoute> },
   { name: 'Notifications', path: '/dashboard/notifications', element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> },
+  { name: 'Mailbox', path: '/dashboard/mailbox', element: <ProtectedRoute><MailboxPage /></ProtectedRoute> },
   { name: 'Profile', path: '/dashboard/profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
 
   // Admin Panel (protected adminOnly)

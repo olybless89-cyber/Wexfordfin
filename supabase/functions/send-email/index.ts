@@ -1,7 +1,8 @@
-// send-email Edge Function: flushes the mail_outbox queue via a configured provider
-// Providers supported: Brevo (REST API key), Resend (REST API key).
-// Admin configures the provider in mail_settings; until then, emails stay queued
-// and this function reports 'no-provider'.
+// send-email Edge Function: flushes the mail_outbox queue.
+// Default behaviour (no provider needed): mail addressed to a registered
+// Wexfordfin user is delivered instantly into their in-app Mailbox.
+// If an external provider (Brevo/Resend) is configured in mail_settings,
+// mail is additionally sent out over the internet (e.g. to Gmail).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -77,12 +78,24 @@ Deno.serve(async (req) => {
     .order('created_at', { ascending: true }).limit(limit);
   if (error) return json({ error: error.message }, 500);
 
-  if (!providerConfigured) {
-    return json({ sent: 0, queued: pending.length, note: 'no-provider — configure SMTP/API key in Admin → Webmail Settings' });
-  }
+  let deliveredInternal = 0, sent = 0, failed = 0, awaitingProvider = 0;
 
-  let sent = 0, failed = 0;
   for (const mail of pending) {
+    // 1) Default in-app delivery: recipient is a registered user → Mailbox
+    const { data: recipient } = await supabase
+      .from('profiles').select('id').or(`id.eq.${mail.user_id ?? '00000000-0000-0000-0000-000000000000'},email.eq.${mail.to_email}`).limit(1).maybeSingle();
+
+    if (recipient) {
+      await supabase.from('mail_outbox').update({
+        status: 'sent', sent_at: new Date().toISOString(), attempts: mail.attempts + 1, error: null,
+      }).eq('id', mail.id);
+      deliveredInternal++;
+      continue;
+    }
+
+    // 2) External recipient: needs a provider to leave the platform
+    if (!providerConfigured) { awaitingProvider++; continue; }
+
     try {
       await sendViaProvider(settings, mail.to_email, mail.subject, mail.body_html, mail.body_text);
       // Optional forward to external mailbox (e.g. Gmail) for record
@@ -104,5 +117,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ sent, failed, queued: pending.length - sent - failed });
+  return json({ delivered_internal: deliveredInternal, sent_external: sent, failed, awaiting_provider: awaitingProvider });
 });

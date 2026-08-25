@@ -139,3 +139,18 @@ export interface MailSettings {
   forward_to: string | null;
   notifications_enabled: boolean;
 }
+
+export interface MailOutbox {
+  id: string;
+  user_id: string | null;
+  to_email: string;
+  subject: string;
+  body_html: string;
+  body_text: string | null;
+  status: string;
+  error: string | null;
+  attempts: number;
+  is_read: boolean;
+  created_at: string;
+  sent_at: string | null;
+}

@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  getAdminMessages, markMessageRead, adminReplyMessage,
+  getAdminMessages, markMessageRead, adminReplyMessage, adminComposeMessage, getAllProfiles,
 } from '@/services/api';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { AdminMessage } from '@/types/types';
-import { Mail, MailOpen, Send, Reply, Inbox, ArrowUpRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { AdminMessage, Profile } from '@/types/types';
+import { Mail, MailOpen, Send, Reply, Inbox, ArrowUpRight, PenSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminWebmailPage() {
@@ -19,9 +22,14 @@ export default function AdminWebmailPage() {
   const [folder, setFolder] = useState<'inbox' | 'sent'>('inbox');
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [composeTo, setComposeTo] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
 
   const reload = () => getAdminMessages().then(setMessages).finally(() => setLoading(false));
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { reload(); getAllProfiles().then(setUsers).catch(() => ({})); }, []);
 
   const inbox = useMemo(() => messages.filter(m => m.direction === 'inbound'), [messages]);
   const sent = useMemo(() => messages.filter(m => m.direction === 'outbound'), [messages]);
@@ -56,6 +64,20 @@ export default function AdminWebmailPage() {
     reload();
   }
 
+  async function sendCompose() {
+    if (!composeTo || !composeSubject.trim() || !composeBody.trim()) return;
+    setSending(true);
+    const recipient = users.find(u => u.email === composeTo);
+    const { error } = await adminComposeMessage(composeTo, recipient?.full_name || '', composeSubject.trim(), composeBody.trim());
+    setSending(false);
+    if (error) { toast.error(`Send failed: ${error}`); return; }
+    toast.success(recipient ? 'Email delivered to user Mailbox' : 'Email queued for external delivery');
+    setComposeOpen(false);
+    setComposeTo(''); setComposeSubject(''); setComposeBody('');
+    setFolder('sent');
+    reload();
+  }
+
   const personLine = (m: AdminMessage) =>
     m.direction === 'inbound'
       ? (m.from_name || m.from_email || 'Unknown')
@@ -69,13 +91,59 @@ export default function AdminWebmailPage() {
             <h1 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Webmail</h1>
             <p className="text-muted-foreground text-sm mt-1">{unread} unread messages</p>
           </div>
-          <Tabs value={folder} onValueChange={v => setFolder(v as 'inbox' | 'sent')}>
-            <TabsList>
-              <TabsTrigger value="inbox" className="gap-2"><Inbox className="h-3.5 w-3.5" />Inbox ({inbox.length})</TabsTrigger>
-              <TabsTrigger value="sent" className="gap-2"><ArrowUpRight className="h-3.5 w-3.5" />Sent ({sent.length})</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => setComposeOpen(true)} className="gap-2">
+              <PenSquare className="h-4 w-4" /> Compose
+            </Button>
+            <Tabs value={folder} onValueChange={v => setFolder(v as 'inbox' | 'sent')}>
+              <TabsList>
+                <TabsTrigger value="inbox" className="gap-2"><Inbox className="h-3.5 w-3.5" />Inbox ({inbox.length})</TabsTrigger>
+                <TabsTrigger value="sent" className="gap-2"><ArrowUpRight className="h-3.5 w-3.5" />Sent ({sent.length})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
+
+        <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader><DialogTitle>New Email</DialogTitle></DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">To</p>
+                <Select value={composeTo} onValueChange={setComposeTo}>
+                  <SelectTrigger><SelectValue placeholder="Select a user…" /></SelectTrigger>
+                  <SelectContent>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.email}>{u.full_name || u.email} — {u.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="…or type any email address"
+                  value={composeTo}
+                  onChange={e => setComposeTo(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Subject</p>
+                <Input value={composeSubject} onChange={e => setComposeSubject(e.target.value)} placeholder="Subject" />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Message</p>
+                <Textarea rows={6} value={composeBody} onChange={e => setComposeBody(e.target.value)} placeholder="Write your message…" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setComposeOpen(false)}>Cancel</Button>
+                <Button onClick={sendCompose} disabled={sending || !composeTo || !composeSubject.trim() || !composeBody.trim()} className="gap-2">
+                  <Send className="h-4 w-4" /> {sending ? 'Sending…' : 'Send Email'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Registered users receive the email instantly in their dashboard Mailbox. External addresses are queued for provider delivery.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-card border-border">

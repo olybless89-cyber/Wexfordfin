@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { getMyUnreadMailCount } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import {
   LayoutDashboard, ArrowLeftRight, Download, Upload,
   Lock, Bell, User, LogOut, Shield, Menu,
-  ChevronRight, FileText
+  ChevronRight, FileText, Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const navItems = [
   { label: 'Withdraw', href: '/dashboard/withdraw', icon: Upload },
   { label: 'Holds', href: '/dashboard/holds', icon: Lock },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { label: 'Mailbox', href: '/dashboard/mailbox', icon: Mail },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
@@ -33,6 +35,15 @@ export default function DashboardLayout({ children, notifCount = 0 }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mailCount, setMailCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const load = () => getMyUnreadMailCount().then(c => { if (active) setMailCount(c); }).catch(() => ({}));
+    load();
+    const t = setInterval(load, 30000);
+    return () => { active = false; clearInterval(t); };
+  }, [location.pathname]);
 
   const handleSignOut = async () => { await signOut(); navigate('/'); };
 
@@ -81,6 +92,9 @@ export default function DashboardLayout({ children, notifCount = 0 }: Props) {
               <span className="flex-1">{label}</span>
               {label === 'Notifications' && notifCount > 0 && (
                 <Badge className="text-xs px-1.5 py-0" style={{ background: GOLD, color: '#06101f' }}>{notifCount}</Badge>
+              )}
+              {label === 'Mailbox' && mailCount > 0 && (
+                <Badge className="text-xs px-1.5 py-0" style={{ background: GOLD, color: '#06101f' }}>{mailCount}</Badge>
               )}
               {active && <ChevronRight className="h-3 w-3 shrink-0" />}
             </Link>

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserAccounts, validateSecurityCode, getUserSecurityCodes } from '@/services/api';
-import { supabase } from '@/db/supabase';
+import { getUserAccounts, validateSecurityCode, getUserSecurityCodes, getOwnTransactionPin, bankingOps } from '@/services/api';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,17 +20,6 @@ function fmt(n: number) {
 }
 function genRef() {
   return 'TXN' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
-}
-
-async function parseEdgeError(error: { context?: { text?: () => Promise<string> }; message?: string }): Promise<string> {
-  try {
-    const raw = await error?.context?.text?.();
-    if (!raw) return error?.message || 'Unknown error';
-    const parsed = JSON.parse(raw);
-    return parsed.error || parsed.message || raw;
-  } catch {
-    return error?.message || 'Unknown error';
-  }
 }
 
 interface ReceiptData {
@@ -157,7 +145,6 @@ function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClose: () 
 function PinModal({
   onVerified, onCancel
 }: { onVerified: () => void; onCancel: () => void }) {
-  const { user } = useAuth();
   const [pin, setPin] = useState('');
   const [show, setShow] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -166,15 +153,14 @@ function PinModal({
   const verify = async () => {
     if (!pin.trim()) { setError('Please enter your PIN'); return; }
     setChecking(true); setError('');
-    const { data } = await supabase.from('profiles')
-      .select('transaction_pin').eq('id', user!.id).maybeSingle();
+    const currentPin = await getOwnTransactionPin();
     setChecking(false);
-    if (!data?.transaction_pin) {
+    if (!currentPin) {
       // No PIN set — allow through with a warning
       toast.warning('No transaction PIN set. Set one in Profile > Transaction PIN for extra security.');
       onVerified(); return;
     }
-    if (data.transaction_pin !== pin) {
+    if (currentPin !== pin) {
       setError('Incorrect PIN. Please try again.'); return;
     }
     onVerified();
@@ -382,10 +368,7 @@ export default function TransferPage() {
     if (!fromAcct || fromAcct.available_balance < amount) { toast.error('Insufficient funds'); return; }
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('banking-ops', {
-        body: { action: 'internal_transfer', from_account_id: fromId, to_account_id: toId, amount, user_id: user!.id, memo: intMemo }
-      });
-      if (error) throw new Error(await parseEdgeError(error));
+      await bankingOps({ action: 'internal_transfer', from_account_id: fromId, to_account_id: toId, amount, user_id: user!.id, memo: intMemo });
       toast.success(`${fmt(amount)} transferred successfully`);
       setIntAmount(''); setFromId(''); setToId(''); setIntMemo('');
       reloadAccounts();
@@ -397,22 +380,19 @@ export default function TransferPage() {
   const executeExternalTransfer = async (fromAcct: Account, amount: number) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('banking-ops', {
-        body: {
-          action: 'external_transfer',
-          from_account_id: fromAcct.id,
-          recipient_account_number: recipientAcctNum.trim(),
-          amount,
-          user_id: user!.id,
-          bank_name: bankName || undefined,
-          routing_number: routingNumber || undefined,
-          swift_code: swiftCode || undefined,
-          bank_address: bankAddress || undefined,
-          transfer_purpose: transferPurpose ? (purposeLabel[transferPurpose] || transferPurpose) : undefined,
-          memo: extMemo || undefined,
-        }
+      const data = await bankingOps<{ success: boolean; reference?: string }>({
+        action: 'external_transfer',
+        from_account_id: fromAcct.id,
+        recipient_account_number: recipientAcctNum.trim(),
+        amount,
+        user_id: user!.id,
+        bank_name: bankName || undefined,
+        routing_number: routingNumber || undefined,
+        swift_code: swiftCode || undefined,
+        bank_address: bankAddress || undefined,
+        transfer_purpose: transferPurpose ? (purposeLabel[transferPurpose] || transferPurpose) : undefined,
+        memo: extMemo || undefined,
       });
-      if (error) throw new Error(await parseEdgeError(error));
 
       setReceipt({
         ref: data?.reference || genRef(),

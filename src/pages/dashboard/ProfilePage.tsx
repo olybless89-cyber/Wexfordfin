@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { updateProfile } from '@/services/api';
-import { supabase } from '@/db/supabase';
+import { updateProfile, getOwnTransactionPin, updateTransactionPin } from '@/services/api';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,16 +53,14 @@ export default function ProfilePage() {
     // If user already has a PIN, verify the current one
     if (hasPinSet) {
       if (!currentPin.trim()) { toast.error('Enter your current PIN first'); return; }
-      const { data } = await supabase.from('profiles').select('transaction_pin').eq('id', user!.id).maybeSingle();
-      if (!data || data.transaction_pin !== currentPin) {
+      const current = await getOwnTransactionPin();
+      if (!current || current !== currentPin) {
         toast.error('Current PIN is incorrect'); return;
       }
     }
 
     setPinLoading(true);
-    const { error } = await supabase.from('profiles')
-      .update({ transaction_pin: newPin })
-      .eq('id', user!.id);
+    const { error } = await updateTransactionPin(newPin);
     setPinLoading(false);
     if (error) { toast.error('Failed to set PIN'); return; }
     toast.success(hasPinSet ? 'Transaction PIN updated' : 'Transaction PIN set successfully');

@@ -1,25 +1,51 @@
-import { supabase } from '@/db/supabase';
+import { apiClient } from '@/lib/apiClient';
 import type {
   Profile, Account, Transaction, Hold,
   DepositRequest, WithdrawalRequest, Notification, AdminMessage,
   SecurityCode, SecurityCodeType, MailSettings, MailOutbox
 } from '@/types/types';
 
+function toError(err: unknown, fallback: string): Error {
+  return err instanceof Error ? err : new Error(fallback);
+}
+
 // ─── Profiles ─────────────────────────────────────────────────────────────────
 
 export async function getProfile(userId: string): Promise<Profile | null> {
-  const { data } = await supabase
-    .from('profiles').select('*').eq('id', userId).maybeSingle();
-  return data;
+  return apiClient.get<Profile | null>(`/profiles/${userId}`).catch(() => null);
 }
 
-export async function updateProfile(userId: string, updates: Partial<Pick<Profile, 'full_name' | 'phone'>>) {
-  return supabase.from('profiles').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', userId);
+// userId is accepted for signature compatibility with the old Supabase-backed
+// version, but every caller only ever updates their own profile — the backend
+// derives "who" from the JWT, so it's ignored here.
+export async function updateProfile(_userId: string, updates: Partial<Pick<Profile, 'full_name' | 'phone'>>): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.patch(`/profiles/me`, updates);
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to update profile') };
+  }
+}
+
+// The transaction PIN column isn't in the shared Profile type (it's sensitive
+// and normally omitted from the UI), so it's fetched/set through its own
+// small helpers rather than widening Profile everywhere.
+export async function getOwnTransactionPin(): Promise<string | null> {
+  const data = await apiClient.get<{ transaction_pin?: string | null }>('/profiles/me').catch(() => null);
+  return data?.transaction_pin ?? null;
+}
+
+export async function updateTransactionPin(pin: string): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.patch('/profiles/me', { transaction_pin: pin });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to set PIN') };
+  }
 }
 
 export async function getAllProfiles(): Promise<Profile[]> {
-  const { data } = await supabase
-    .from('profiles').select('*').order('created_at', { ascending: false }).limit(500);
+  const data = await apiClient.get<Profile[]>('/profiles').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
@@ -28,10 +54,12 @@ export async function getAllProfiles(): Promise<Profile[]> {
 type AdminManageResult = { success: boolean; error?: string };
 
 async function invokeManage(body: Record<string, unknown>): Promise<AdminManageResult> {
-  const { data, error } = await supabase.functions.invoke('admin-manage-user', { body });
-  if (error) return { success: false, error: error.message };
-  if (data?.error) return { success: false, error: data.error };
-  return { success: true };
+  try {
+    await apiClient.post('/admin/users/manage', body);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: toError(err, 'Action failed').message };
+  }
 }
 
 export async function adminUpdateCredentials(user_id: string, updates: { email?: string; password?: string }): Promise<AdminManageResult> {
@@ -51,15 +79,21 @@ export async function adminDeleteUser(user_id: string): Promise<AdminManageResul
 }
 
 export async function adminUpdateProfile(user_id: string, updates: { full_name?: string; phone?: string }): Promise<AdminManageResult> {
-  const { error } = await supabase.from('profiles')
-    .update({ ...updates, updated_at: new Date().toISOString() }).eq('id', user_id);
-  return { success: !error, error: error?.message };
+  try {
+    await apiClient.patch(`/profiles/${user_id}`, updates);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: toError(err, 'Failed to update profile').message };
+  }
 }
 
 export async function adminUpdateAccount(account_id: string, updates: { balance?: number; available_balance?: number; is_active?: boolean; account_type?: string }): Promise<AdminManageResult> {
-  const { error } = await supabase.from('accounts')
-    .update({ ...updates }).eq('id', account_id);
-  return { success: !error, error: error?.message };
+  try {
+    await apiClient.patch(`/admin/accounts/${account_id}`, updates);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: toError(err, 'Failed to update account').message };
+  }
 }
 
 export async function adminCreateUser(params: {
@@ -69,50 +103,43 @@ export async function adminCreateUser(params: {
   phone?: string;
   role?: 'user' | 'admin';
 }): Promise<{ success: boolean; user_id?: string; error?: string }> {
-  const { data, error } = await supabase.functions.invoke('admin-create-user', { body: params });
-  if (error) return { success: false, error: error.message };
-  if (data?.error) return { success: false, error: data.error };
-  return { success: true, user_id: data.user_id };
+  try {
+    const data = await apiClient.post<{ success: boolean; user_id: string }>('/admin/users', params);
+    return { success: true, user_id: data.user_id };
+  } catch (err) {
+    return { success: false, error: toError(err, 'Failed to create user').message };
+  }
 }
 
 // ─── Accounts ─────────────────────────────────────────────────────────────────
 
 export async function getUserAccounts(userId: string): Promise<Account[]> {
-  const { data } = await supabase
-    .from('accounts').select('*').eq('user_id', userId).order('account_type');
+  const data = await apiClient.get<Account[]>(`/accounts/user/${userId}`).catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 export async function getAccountByNumber(accountNumber: string): Promise<Account | null> {
-  const { data } = await supabase
-    .from('accounts').select('*').eq('account_number', accountNumber).maybeSingle();
-  return data;
+  return apiClient.get<Account | null>(`/accounts/by-number/${encodeURIComponent(accountNumber)}`).catch(() => null);
 }
 
 export async function getAllAccounts(): Promise<Account[]> {
-  const { data } = await supabase
-    .from('accounts').select('*').order('created_at', { ascending: false }).limit(1000);
+  const data = await apiClient.get<Account[]>('/admin/accounts').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 // ─── Transactions ──────────────────────────────────────────────────────────────
 
 export async function getUserTransactions(userId: string, page = 1, pageSize = 20): Promise<Transaction[]> {
-  const from = (page - 1) * pageSize;
-  const { data } = await supabase
-    .from('transactions').select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1);
+  const data = await apiClient
+    .get<Transaction[]>(`/transactions/user/${userId}?page=${page}&pageSize=${pageSize}`)
+    .catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 export async function getAllTransactions(page = 1, pageSize = 50): Promise<Transaction[]> {
-  const from = (page - 1) * pageSize;
-  const { data } = await supabase
-    .from('transactions').select('*, profiles!transactions_user_id_fkey(email, full_name)')
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1);
+  const data = await apiClient
+    .get<Transaction[]>(`/admin/transactions?page=${page}&pageSize=${pageSize}`)
+    .catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
@@ -129,255 +156,202 @@ export interface TransactionEdit {
   performed_by_admin?: string;
 }
 
-// Full A-Z edit via admin RPC (transaction_type, amount, status, description,
+// Full A-Z edit via admin route (transaction_type, amount, status, description,
 // reference_number, from/to accounts, user, performed_by, created_at)
 export async function updateTransaction(id: string, updates: TransactionEdit): Promise<{ error: string | null }> {
-  const toP = (t?: string) => (t ?? null);
-  const { error } = await supabase.rpc('admin_edit_transaction', {
-    p_id: id,
-    p_transaction_type: toP(updates.transaction_type),
-    p_amount: updates.amount ?? null,
-    p_status: toP(updates.status),
-    p_description: toP(updates.description),
-    p_reference_number: toP(updates.reference_number),
-    p_from_account_id: toP(updates.from_account_id),
-    p_to_account_id: toP(updates.to_account_id),
-    p_user_id: toP(updates.user_id),
-    p_created_at: toP(updates.created_at),
-    p_performed_by_admin: toP(updates.performed_by_admin),
-  });
-  return { error: error?.message ?? null };
+  try {
+    await apiClient.patch(`/admin/transactions/${id}`, updates);
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to update transaction').message };
+  }
+}
+
+// Single entry point for the banking-ops backend route (internal/external
+// transfers, admin funding, holds, deposit/withdrawal approval). Mirrors the
+// old `supabase.functions.invoke('banking-ops', { body })` call shape.
+export async function bankingOps<T = { success: boolean; reference?: string }>(body: Record<string, unknown>): Promise<T> {
+  return apiClient.post<T>('/banking-ops', body);
 }
 
 export async function deleteTransaction(id: string): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from('transactions')
-    .delete()
-    .eq('id', id);
-  return { error: error?.message ?? null };
+  try {
+    await apiClient.delete(`/admin/transactions/${id}`);
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to delete transaction').message };
+  }
 }
 
 // ─── Holds ─────────────────────────────────────────────────────────────────────
 
 export async function getUserHolds(userId: string): Promise<Hold[]> {
-  const { data } = await supabase
-    .from('holds').select('*, accounts(account_type, account_number)')
-    .eq('user_id', userId).eq('is_released', false)
-    .order('placed_at', { ascending: false });
+  const data = await apiClient.get<Hold[]>(`/holds/user/${userId}`).catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 export async function getAllHolds(): Promise<Hold[]> {
-  const { data } = await supabase
-    .from('holds').select('*, accounts(account_type, account_number), profiles!holds_user_id_fkey(email, full_name)')
-    .order('placed_at', { ascending: false }).limit(500);
+  const data = await apiClient.get<Hold[]>('/admin/holds').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 // ─── Deposit Requests ──────────────────────────────────────────────────────────
 
-export async function getUserDepositRequests(userId: string): Promise<DepositRequest[]> {
-  const { data } = await supabase
-    .from('deposit_requests').select('*, accounts(account_type, account_number)')
-    .eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+// userId is accepted for signature compatibility; every caller only ever asks
+// for their own requests, which the backend derives from the JWT.
+export async function getUserDepositRequests(_userId: string): Promise<DepositRequest[]> {
+  const data = await apiClient.get<DepositRequest[]>('/deposit-requests').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
-export async function submitDepositRequest(userId: string, accountId: string, amount: number) {
-  return supabase.from('deposit_requests').insert({ user_id: userId, account_id: accountId, amount });
+export async function submitDepositRequest(_userId: string, accountId: string, amount: number): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.post('/deposit-requests', { account_id: accountId, amount });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to submit deposit request') };
+  }
 }
 
 export async function getAllDepositRequests(): Promise<DepositRequest[]> {
-  const { data } = await supabase
-    .from('deposit_requests')
-    .select('*, accounts(account_type, account_number), profiles!deposit_requests_user_id_fkey(email, full_name)')
-    .order('created_at', { ascending: false }).limit(200);
+  const data = await apiClient.get<DepositRequest[]>('/admin/deposit-requests').catch(() => []);
   return Array.isArray(data) ? data : [];
+}
+
+export async function adminUpdateDepositRequestStatus(id: string, status: 'approved' | 'rejected') {
+  return apiClient.patch(`/admin/deposit-requests/${id}`, { status });
 }
 
 // ─── Withdrawal Requests ───────────────────────────────────────────────────────
 
-export async function getUserWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]> {
-  const { data } = await supabase
-    .from('withdrawal_requests').select('*, accounts(account_type, account_number)')
-    .eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+export async function getUserWithdrawalRequests(_userId: string): Promise<WithdrawalRequest[]> {
+  const data = await apiClient.get<WithdrawalRequest[]>('/withdrawal-requests').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
-export async function submitWithdrawalRequest(userId: string, accountId: string, amount: number) {
-  return supabase.from('withdrawal_requests').insert({ user_id: userId, account_id: accountId, amount });
+export async function submitWithdrawalRequest(_userId: string, accountId: string, amount: number): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.post('/withdrawal-requests', { account_id: accountId, amount });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to submit withdrawal request') };
+  }
 }
 
 export async function getAllWithdrawalRequests(): Promise<WithdrawalRequest[]> {
-  const { data } = await supabase
-    .from('withdrawal_requests')
-    .select('*, accounts(account_type, account_number), profiles!withdrawal_requests_user_id_fkey(email, full_name)')
-    .order('created_at', { ascending: false }).limit(200);
+  const data = await apiClient.get<WithdrawalRequest[]>('/admin/withdrawal-requests').catch(() => []);
   return Array.isArray(data) ? data : [];
+}
+
+export async function adminUpdateWithdrawalRequestStatus(id: string, status: 'approved' | 'rejected') {
+  return apiClient.patch(`/admin/withdrawal-requests/${id}`, { status });
 }
 
 // ─── Notifications ─────────────────────────────────────────────────────────────
 
-export async function getUserNotifications(userId: string): Promise<Notification[]> {
-  const { data } = await supabase
-    .from('notifications').select('*').eq('user_id', userId)
-    .order('created_at', { ascending: false }).limit(50);
+export async function getUserNotifications(_userId: string): Promise<Notification[]> {
+  const data = await apiClient.get<Notification[]>('/notifications').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 export async function markNotificationRead(id: string) {
-  return supabase.from('notifications').update({ is_read: true }).eq('id', id);
+  return apiClient.patch(`/notifications/${id}/read`).catch(() => null);
 }
 
+// Admin sends a notification to a customer.
 export async function createNotification(userId: string, title: string, message: string) {
-  return supabase.from('notifications').insert({ user_id: userId, title, message });
+  return apiClient.post('/admin/notifications', { user_id: userId, title, message });
 }
 
 // ─── Admin Messages ────────────────────────────────────────────────────────────
 
 export async function getAdminMessages(): Promise<AdminMessage[]> {
-  const { data } = await supabase
-    .from('admin_messages').select('*').order('created_at', { ascending: false }).limit(100);
+  const data = await apiClient.get<AdminMessage[]>('/admin/messages').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
-export async function sendContactMessage(fromName: string, fromEmail: string, subject: string, message: string) {
-  return supabase.from('admin_messages').insert({ from_name: fromName, from_email: fromEmail, subject, message });
+export async function sendContactMessage(fromName: string, fromEmail: string, subject: string, message: string): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.post('/messages/contact', { from_name: fromName, from_email: fromEmail, subject, message });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to send message') };
+  }
 }
 
 // Post a message as the current logged-in user (support ticket from dashboard)
-export async function sendUserSupportMessage(subject: string, message: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-  const { data: profile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single();
-  return supabase.from('admin_messages').insert({
-    from_user_id: user.id,
-    from_name: profile?.full_name || user.email,
-    from_email: profile?.email || user.email,
-    subject, message,
-  });
-}
-
-function brandedMailHtml(replyText: string, fromName: string, fromEmail: string) {
-  return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-      <div style="background:#0a1628;padding:20px 24px"><span style="color:#fff;font-size:20px;font-weight:bold">Wexford</span><span style="color:#c9a227;font-size:20px;font-weight:bold">fin</span></div>
-      <div style="padding:24px"><p style="color:#4b5563;font-size:14px;line-height:1.7;white-space:pre-wrap">${replyText.replace(/</g, '&lt;')}</p>
-      <p style="color:#9ca3af;font-size:12px;margin-top:16px">— ${fromName} · ${fromEmail}</p></div></div>`;
-}
-
-// Insert into mail_outbox with instant in-app delivery when the recipient is a
-// registered user (default webmail — no external provider needed).
-async function queueOutboundMail(toEmail: string, subject: string, text: string) {
-  const { data: settings } = await supabase.from('mail_settings').select('from_name,from_email').eq('id', 1).single();
-  const { data: recipient } = await supabase.from('profiles').select('id').eq('email', toEmail).maybeSingle();
-  const internal = !!recipient;
-  await supabase.from('mail_outbox').insert({
-    user_id: recipient?.id ?? null,
-    to_email: toEmail,
-    subject,
-    body_html: brandedMailHtml(text, settings?.from_name || 'Wexfordfin Support', settings?.from_email || 'support@wexfordfin.com'),
-    body_text: text,
-    status: internal ? 'sent' : 'pending',
-    sent_at: internal ? new Date().toISOString() : null,
-  });
-  if (!internal) {
-    // external recipient: best-effort flush (delivers when a provider is configured)
-    await supabase.functions.invoke('send-email').catch(() => ({}));
+export async function sendUserSupportMessage(subject: string, message: string): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.post('/messages/support', { subject, message });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to send message') };
   }
-  return internal;
 }
 
 // Admin reply: stores in mailbox (thread via parent_id) and delivers an email
-export async function adminReplyMessage(parent: AdminMessage, replyText: string) {
-  const toEmail = parent.from_email;
-  if (!toEmail) return { error: 'Original sender has no email address' };
-
-  const subject = `Re: ${parent.subject.replace(/^Re:\s*/i, '')}`;
-  const internal = await queueOutboundMail(toEmail, subject, replyText);
-
-  const { error } = await supabase.from('admin_messages').insert({
-    direction: 'outbound',
-    to_email: toEmail,
-    to_name: parent.from_name,
-    parent_id: parent.id,
-    subject,
-    message: replyText,
-    is_read: true,
-    delivery_status: internal ? 'delivered' : 'queued',
-    sent_at: new Date().toISOString(),
-  });
-  if (error) return { error: error.message };
-  return { error: null };
+export async function adminReplyMessage(parent: AdminMessage, replyText: string): Promise<{ error: string | null }> {
+  try {
+    await apiClient.post(`/admin/messages/${parent.id}/reply`, { reply: replyText });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to send reply').message };
+  }
 }
 
 // Admin compose: brand-new email to any address (user or external)
-export async function adminComposeMessage(toEmail: string, toName: string, subject: string, message: string) {
-  const internal = await queueOutboundMail(toEmail, subject, message);
-  const { error } = await supabase.from('admin_messages').insert({
-    direction: 'outbound',
-    to_email: toEmail,
-    to_name: toName || toEmail,
-    subject,
-    message,
-    is_read: true,
-    delivery_status: internal ? 'delivered' : 'queued',
-    sent_at: new Date().toISOString(),
-  });
-  if (error) return { error: error.message };
-  return { error: null };
+export async function adminComposeMessage(toEmail: string, toName: string, subject: string, message: string): Promise<{ error: string | null }> {
+  try {
+    await apiClient.post('/admin/messages/compose', { to_email: toEmail, to_name: toName, subject, message });
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to send message').message };
+  }
 }
 
 // ─── User Mailbox (default in-app webmail) ───────────────────────────────────
 
 export async function getMyEmails(): Promise<MailOutbox[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data } = await supabase
-    .from('mail_outbox').select('*').eq('user_id', user.id)
-    .order('created_at', { ascending: false }).limit(100);
+  const data = await apiClient.get<MailOutbox[]>('/mail/inbox').catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
 export async function getMyUnreadMailCount(): Promise<number> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return 0;
-  const { count } = await supabase
-    .from('mail_outbox').select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id).eq('is_read', false);
-  return count ?? 0;
+  const data = await apiClient.get<{ count: number }>('/mail/unread-count').catch(() => ({ count: 0 }));
+  return data?.count ?? 0;
 }
 
 export async function markEmailRead(id: string) {
-  return supabase.from('mail_outbox').update({ is_read: true }).eq('id', id);
+  return apiClient.patch(`/mail/inbox/${id}/read`).catch(() => null);
 }
 
 export async function markMessageRead(id: string) {
-  return supabase.from('admin_messages').update({ is_read: true }).eq('id', id);
+  return apiClient.patch(`/admin/messages/${id}/read`).catch(() => null);
 }
 
 // ─── Mail Settings (admin) ─────────────────────────────────────────────────────
 
 export async function getMailSettings(): Promise<MailSettings | null> {
-  const { data } = await supabase.from('mail_settings').select('*').eq('id', 1).single();
-  return data;
+  return apiClient.get<MailSettings | null>('/admin/mail-settings').catch(() => null);
 }
 
-export async function updateMailSettings(updates: Partial<Omit<MailSettings, 'id'>>) {
-  return supabase.from('mail_settings').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', 1);
+export async function updateMailSettings(updates: Partial<Omit<MailSettings, 'id'>>): Promise<{ error: Error | null }> {
+  try {
+    await apiClient.patch('/admin/mail-settings', updates);
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to update mail settings') };
+  }
 }
 
 export async function flushMailQueue(): Promise<{ delivered_internal: number; sent_external: number; failed: number; awaiting_provider: number }> {
-  const { data } = await supabase.functions.invoke('send-email');
-  return data as { delivered_internal: number; sent_external: number; failed: number; awaiting_provider: number };
+  return apiClient.post('/admin/mail/flush');
 }
 
 // ─── Security Codes ────────────────────────────────────────────────────────────
 
 export async function getUserSecurityCodes(userId: string): Promise<SecurityCode[]> {
-  const { data } = await supabase
-    .from('security_codes').select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+  const data = await apiClient.get<SecurityCode[]>(`/security-codes/user/${userId}`).catch(() => []);
   return Array.isArray(data) ? data : [];
 }
 
@@ -385,50 +359,43 @@ export async function adminIssueSecurityCode(
   userId: string,
   codeType: SecurityCodeType,
   code: string,
-  issuedBy: string,
+  _issuedBy: string,
   expiresAt?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase.from('security_codes').insert({
-    user_id: userId,
-    code_type: codeType,
-    code,
-    issued_by: issuedBy,
-    expires_at: expiresAt || null,
-  });
-  return { success: !error, error: error?.message };
+  try {
+    await apiClient.post('/admin/security-codes', {
+      user_id: userId,
+      code_type: codeType,
+      code,
+      expires_at: expiresAt || null,
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: toError(err, 'Failed to issue code').message };
+  }
 }
 
 export async function validateSecurityCode(
-  userId: string,
+  _userId: string,
   codeType: SecurityCodeType,
   code: string
 ): Promise<{ valid: boolean; error?: string }> {
-  const { data, error } = await supabase
-    .from('security_codes')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('code_type', codeType)
-    .eq('code', code)
-    .eq('is_used', false)
-    .maybeSingle();
-
-  if (error) return { valid: false, error: error.message };
-  if (!data) return { valid: false, error: 'Invalid or already used code' };
-
-  // Check expiry
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
-    return { valid: false, error: 'Code has expired' };
+  try {
+    const data = await apiClient.post<{ valid: boolean; error?: string }>('/security-codes/validate', {
+      code_type: codeType,
+      code,
+    });
+    return data;
+  } catch (err) {
+    return { valid: false, error: toError(err, 'Validation failed').message };
   }
-
-  // Mark as used
-  await supabase.from('security_codes')
-    .update({ is_used: true, used_at: new Date().toISOString() })
-    .eq('id', data.id);
-
-  return { valid: true };
 }
 
 export async function adminDeleteSecurityCode(id: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('security_codes').delete().eq('id', id);
-  return { error: error?.message ?? null };
+  try {
+    await apiClient.delete(`/admin/security-codes/${id}`);
+    return { error: null };
+  } catch (err) {
+    return { error: toError(err, 'Failed to delete code').message };
+  }
 }

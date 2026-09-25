@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/db/supabase';
-import { getProfile } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,19 +32,14 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await signIn(email, password);
+    const { error, profile } = await signIn(email, password);
     if (error) {
       setLoading(false);
       toast.error('Login failed: ' + error.message);
       return;
     }
     // Route by role: admins go to the separate admin portal, users to the dashboard
-    let dest = '/dashboard';
-    const { data: { user: u } } = await supabase.auth.getUser();
-    if (u) {
-      const profile = await getProfile(u.id);
-      if (profile?.role === 'admin') dest = '/admin';
-    }
+    const dest = profile?.role === 'admin' ? '/admin' : '/dashboard';
     setLoading(false);
     toast.success('Welcome back!');
     navigate(dest, { replace: true });

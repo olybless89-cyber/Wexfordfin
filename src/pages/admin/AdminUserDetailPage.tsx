@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/db/supabase';
 import {
   getProfile, getUserAccounts, getUserTransactions, createNotification,
   adminUpdateCredentials, adminSetActive, adminSetRole, adminDeleteUser,
   adminUpdateProfile, adminUpdateAccount, updateTransaction, deleteTransaction,
   getUserSecurityCodes, adminIssueSecurityCode, adminDeleteSecurityCode,
+  getUserHolds, bankingOps,
 } from '@/services/api';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,10 +85,7 @@ export default function AdminUserDetailPage() {
     if (!fundAccountId || isNaN(amount) || amount <= 0) { toast.error('Fill all fields'); return; }
     setFundLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('banking-ops', {
-        body: { action: 'admin_fund', account_id: fundAccountId, amount, admin_id: adminUser!.id, user_id: id }
-      });
-      if (error) { const msg = await error?.context?.text(); throw new Error(msg || error.message); }
+      await bankingOps({ action: 'admin_fund', account_id: fundAccountId, amount, admin_id: adminUser!.id, user_id: id });
       await createNotification(id!, 'Account Funded', `Your account has been credited ${fmt(amount)} by the bank.`);
       toast.success('Account funded'); setFundAmount(''); setFundAccountId(''); reload();
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed'); }
@@ -100,10 +97,7 @@ export default function AdminUserDetailPage() {
     if (!holdAccountId || isNaN(amount) || amount <= 0 || !holdReason.trim()) { toast.error('All fields required'); return; }
     setHoldLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('banking-ops', {
-        body: { action: 'place_hold', account_id: holdAccountId, amount, reason: holdReason, admin_id: adminUser!.id, user_id: id }
-      });
-      if (error) { const msg = await error?.context?.text(); throw new Error(msg || error.message); }
+      await bankingOps({ action: 'place_hold', account_id: holdAccountId, amount, reason: holdReason, admin_id: adminUser!.id, user_id: id });
       await createNotification(id!, 'Fund Hold Placed', `A hold of ${fmt(amount)} has been placed. Reason: ${holdReason}`);
       toast.success('Hold placed'); setHoldAmount(''); setHoldAccountId(''); setHoldReason(''); reload();
     } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed'); }
@@ -111,10 +105,11 @@ export default function AdminUserDetailPage() {
   };
 
   const releaseHold = async (holdId: string, userId: string, amount: number) => {
-    const { error } = await supabase.functions.invoke('banking-ops', {
-      body: { action: 'release_hold', hold_id: holdId, admin_id: adminUser!.id, user_id: userId }
-    });
-    if (error) { toast.error('Failed to release hold'); return; }
+    try {
+      await bankingOps({ action: 'release_hold', hold_id: holdId, admin_id: adminUser!.id, user_id: userId });
+    } catch {
+      toast.error('Failed to release hold'); return;
+    }
     await createNotification(userId, 'Hold Released', `A hold of ${fmt(amount)} has been released.`);
     toast.success('Hold released'); reload();
   };
@@ -764,9 +759,7 @@ export default function AdminUserDetailPage() {
 function ActiveHolds({ userId, onRelease }: { userId: string; onRelease: (id: string, uid: string, amount: number) => void }) {
   const [holds, setHolds] = useState<Array<{ id: string; amount: number; reason: string; placed_at: string }>>([]);
   useEffect(() => {
-    supabase.from('holds').select('*').eq('user_id', userId).eq('is_released', false)
-      .order('placed_at', { ascending: false })
-      .then(({ data }) => setHolds(Array.isArray(data) ? data : []));
+    getUserHolds(userId).then(data => setHolds(Array.isArray(data) ? data : []));
   }, [userId]);
 
   if (holds.length === 0) return <p className="text-sm text-muted-foreground">No active holds</p>;

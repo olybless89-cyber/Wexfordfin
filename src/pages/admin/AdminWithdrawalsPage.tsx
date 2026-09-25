@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAllWithdrawalRequests, createNotification } from '@/services/api';
-import { supabase } from '@/db/supabase';
+import { getAllWithdrawalRequests, createNotification, bankingOps, adminUpdateWithdrawalRequestStatus } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,14 +23,11 @@ export default function AdminWithdrawalsPage() {
   const handle = async (req: WithdrawalRequest, approve: boolean) => {
     try {
       if (approve) {
-        const { error } = await supabase.functions.invoke('banking-ops', {
-          body: { action: 'approve_withdrawal', withdrawal_request_id: req.id, account_id: req.account_id, amount: req.amount, admin_id: adminUser!.id, user_id: req.user_id }
-        });
-        if (error) { const msg = await error?.context?.text(); throw new Error(msg || error.message); }
+        await bankingOps({ action: 'approve_withdrawal', withdrawal_request_id: req.id, account_id: req.account_id, amount: req.amount, admin_id: adminUser!.id, user_id: req.user_id });
         await createNotification(req.user_id, 'Withdrawal Approved', `Your withdrawal of ${fmt(req.amount)} has been approved and processed.`);
         toast.success('Withdrawal approved');
       } else {
-        await supabase.from('withdrawal_requests').update({ status: 'rejected', reviewed_by: adminUser!.id, updated_at: new Date().toISOString() }).eq('id', req.id);
+        await adminUpdateWithdrawalRequestStatus(req.id, 'rejected');
         await createNotification(req.user_id, 'Withdrawal Rejected', `Your withdrawal request of ${fmt(req.amount)} was not approved.`);
         toast.success('Withdrawal rejected');
       }

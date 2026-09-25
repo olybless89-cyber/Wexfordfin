@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAllDepositRequests, createNotification } from '@/services/api';
-import { supabase } from '@/db/supabase';
+import { getAllDepositRequests, createNotification, bankingOps, adminUpdateDepositRequestStatus } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,14 +23,11 @@ export default function AdminDepositsPage() {
   const handle = async (req: DepositRequest, approve: boolean) => {
     try {
       if (approve) {
-        const { error } = await supabase.functions.invoke('banking-ops', {
-          body: { action: 'approve_deposit', deposit_request_id: req.id, account_id: req.account_id, amount: req.amount, admin_id: adminUser!.id, user_id: req.user_id }
-        });
-        if (error) { const msg = await error?.context?.text(); throw new Error(msg || error.message); }
+        await bankingOps({ action: 'approve_deposit', deposit_request_id: req.id, account_id: req.account_id, amount: req.amount, admin_id: adminUser!.id, user_id: req.user_id });
         await createNotification(req.user_id, 'Deposit Approved', `Your deposit of ${fmt(req.amount)} has been approved and credited.`);
         toast.success('Deposit approved');
       } else {
-        await supabase.from('deposit_requests').update({ status: 'rejected', reviewed_by: adminUser!.id, updated_at: new Date().toISOString() }).eq('id', req.id);
+        await adminUpdateDepositRequestStatus(req.id, 'rejected');
         await createNotification(req.user_id, 'Deposit Request Rejected', `Your deposit request of ${fmt(req.amount)} was not approved.`);
         toast.success('Deposit rejected');
       }

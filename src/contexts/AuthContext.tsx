@@ -1,14 +1,21 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { supabase } from '@/db/supabase';
-import type { User } from '@supabase/supabase-js';
+import { apiClient, getToken, setToken, clearToken } from '@/lib/apiClient';
 import type { Profile } from '@/types/types';
-import { getProfile } from '@/services/api';
+import { getProfile, updateProfile } from '@/services/api';
+
+// The rest of the app only ever reads `.id` and `.email` off this object (it
+// used to be a full Supabase `User`). We synthesize it from the backend's
+// Profile response so every other component keeps working unchanged.
+export interface SessionUser {
+  id: string;
+  email: string;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: SessionUser | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; profile: Profile | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -17,9 +24,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const applyProfile = (p: Profile | null) => {
+    setProfile(p);
+    setUser(p ? { id: p.id, email: p.email } : null);
+  };
 
   const refreshProfile = async () => {
     if (!user) { setProfile(null); return; }
@@ -28,49 +40,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) getProfile(session.user.id).then(setProfile);
-    }).finally(() => setLoading(false));
+    const token = getToken();
+    if (!token) { setLoading(false); return; }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        getProfile(session.user.id).then(setProfile);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    apiClient
+      .get<{ user: Profile }>('/auth/me')
+      .then(({ user: p }) => applyProfile(p))
+      .catch(() => { clearToken(); applyProfile(null); })
+      .finally(() => setLoading(false));
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      return { error: null };
+      const { token, user: p } = await apiClient.post<{ token: string; user: Profile }>('/auth/login', { email, password });
+      setToken(token);
+      applyProfile(p);
+      return { error: null, profile: p };
     } catch (error) {
-      return { error: error as Error };
+      return { error: error as Error, profile: null };
     }
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName || '' } },
+      const { token, user: p } = await apiClient.post<{ token: string; user: Profile }>('/auth/register', {
+        email, password, full_name: fullName || null,
       });
-      if (error) throw error;
-      // Update full_name in profile after creation
+      setToken(token);
+      applyProfile(p);
+      // Some callers pass a full name that the register call already stores,
+      // but keep this as a defensive follow-up in case it was left blank above.
       if (fullName) {
-        setTimeout(async () => {
-          const { data: { user: u } } = await supabase.auth.getUser();
-          if (u) {
-            await supabase.from('profiles').update({ full_name: fullName }).eq('id', u.id);
-          }
-        }, 1000);
+        updateProfile(p.id, { full_name: fullName }).then(() => refreshProfile()).catch(() => {});
       }
       return { error: null };
     } catch (error) {
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    clearToken();
     setUser(null);
     setProfile(null);
   };
